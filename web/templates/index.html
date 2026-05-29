@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Supreme Panel</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; }
+        .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { color: #333; }
+        .stat { font-size: 24px; font-weight: bold; color: #007bff; }
+    </style>
+</head>
+<body>
+    <h1>Supreme Panel Dashboard</h1>
+    <div id="stats" class="card">
+        <p>Loading stats...</p>
+    </div>
+    <div class="card">
+        <h3>Grant Premium</h3>
+        <input type="text" id="userId" placeholder="User ID">
+        <button onclick="grantPremium()">Grant</button>
+    </div>
+
+    <script>
+        async function fetchStats() {
+            const token = localStorage.getItem('token');
+            const resp = await fetch('/stats', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await resp.json();
+            document.getElementById('stats').innerHTML = `
+                <p>Total Users: <span class="stat">${data.total_users}</span></p>
+                <p>Active Clones: <span class="stat">${data.active_clones}</span></p>
+                <p>Premium Users: <span class="stat">${data.premium_users}</span></p>
+            `;
+        }
+
+        async function grantPremium() {
+            const userId = document.getElementById('userId').value;
+            const token = localStorage.getItem('token');
+            const resp = await fetch(`/admin/grant-premium/${userId}?days=30`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            alert('Success');
+        }
+
+        // Check for token or redirect
+        if(!localStorage.getItem('token')) {
+             // Simplified: just prompt for token if missing
+             const token = prompt("Enter Admin Token:");
+             localStorage.setItem('token', token);
+        }
+        fetchStats();
+    </script>
+</body>
+</html>

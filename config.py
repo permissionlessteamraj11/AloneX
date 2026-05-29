@@ -11,6 +11,9 @@ class Config:
 
         self.BOT_TOKEN = getenv("BOT_TOKEN", "Apna Bot Token")
         self.MONGO_URL = getenv("MONGO_URL", "Apna Mongo Db Dalo")
+        self.POSTGRES_URL = getenv("POSTGRES_URL", "postgresql+asyncpg://user:password@localhost/dbname")
+        self.REDIS_URL = getenv("REDIS_URL", "redis://localhost:6379/0")
+        self.ENCRYPTION_KEY = getenv("ENCRYPTION_KEY", "generate-a-secure-key-here")
 
         self.LOGGER_ID = int(getenv("LOGGER_ID", "Apna Log Group Id Dalo"))
         self.OWNER_ID = int(getenv("OWNER_ID", "Owner I'd dalo"))

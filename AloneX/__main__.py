@@ -10,11 +10,15 @@ from pyrogram import idle
 
 from AloneX import (anon, app, config, db,
                    logger, stop, userbot, yt)
+from AloneX.database.db import init_db
+from AloneX.services.clones.manager import clone_manager
 from AloneX.plugins import all_modules
 
 
 async def main():
     await db.connect()
+    await init_db()
+    await clone_manager.load_all_clones()
     await app.boot()
     await userbot.boot()
     await anon.boot()
