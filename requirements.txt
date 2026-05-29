@@ -10,3 +10,11 @@ py-yt-search~=0.5.7
 python-dotenv~=1.2.1
 yt-dlp[default]>=2026.3.13
 static-ffmpeg
+sqlalchemy[asyncio]
+asyncpg
+redis
+fastapi
+uvicorn
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
