@@ -6,21 +6,21 @@ load_dotenv()
 
 class Config:
     def __init__(self):
-        self.API_ID = int(getenv("API_ID", "17596251"))
-        self.API_HASH = getenv("API_HASH", "e58343b4c0193e293e391daf97603fcd")
+        self.API_ID = int(getenv("API_ID") or "17596251")
+        self.API_HASH = getenv("API_HASH") or "e58343b4c0193e293e391daf97603fcd"
 
-        self.BOT_TOKEN = getenv("BOT_TOKEN", "Apna Bot Token")
-        self.MONGO_URL = getenv("MONGO_URL", "Apna Mongo Db Dalo")
+        self.BOT_TOKEN = getenv("BOT_TOKEN")
+        self.MONGO_URL = getenv("MONGO_URL")
         self.POSTGRES_URL = getenv("POSTGRES_URL", "postgresql+asyncpg://user:password@localhost/dbname")
         self.REDIS_URL = getenv("REDIS_URL", "redis://localhost:6379/0")
         self.ENCRYPTION_KEY = getenv("ENCRYPTION_KEY", "generate-a-secure-key-here")
 
-        self.LOGGER_ID = int(getenv("LOGGER_ID", "Apna Log Group Id Dalo"))
-        self.OWNER_ID = int(getenv("OWNER_ID", "Owner I'd dalo"))
+        self.LOGGER_ID = int(getenv("LOGGER_ID") or "-100")
+        self.OWNER_ID = int(getenv("OWNER_ID") or "7524032836")
         
-        self.SESSION1 = getenv("SESSION", "Apna String Dalo")
-        self.SESSION2 = getenv("SESSION2", None)
-        self.SESSION3 = getenv("SESSION3", None)
+        self.SESSION1 = getenv("SESSION")
+        self.SESSION2 = getenv("SESSION2")
+        self.SESSION3 = getenv("SESSION3")
 
         self.SUPPORT_CHANNEL = getenv("SUPPORT_CHANNEL", "https://t.me/AloneUpdates")
         self.SUPPORT_CHAT = getenv("SUPPORT_CHAT", "https://t.me/AloneBotSupport")
