@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
-from AloneX.database.db import get_db
-from AloneX.database.models import User, Clone, AdminAction, Broadcast
+from NarzoxBots.database.db import get_db
+from NarzoxBots.database.models import User, Clone, AdminAction, Broadcast
 from sqlalchemy import select, func
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
