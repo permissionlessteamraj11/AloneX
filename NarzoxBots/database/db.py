@@ -304,10 +304,34 @@ class Database:
 
     async def get_assistant(self, chat_id: int):
         from NarzoxBots import userbot
+        # logic to determine which assistant to use for this chat
+        # For now, it defaults to the first one, but for clones,
+        # it should ideally use the clone's assistant if available.
+        # This is a bit complex with the current architecture, so we keep it simple.
         return userbot.clients[0]
 
     async def get_client(self, chat_id: int):
-        return await self.get_assistant(chat_id)
+        # Determine if this chat is served by a clone or the main bot
+        from NarzoxBots import app
+        from NarzoxBots.services.clones.manager import clone_manager
+
+        # Check if any clone serves this chat by looking at its bot_token
+        # or some other identifier. Since we don't have a direct mapping
+        # of chat_id -> clone_token in the current DB, we might need a fallback.
+        # However, for timer updates, we can try to find if the chat has active call
+        # and if that call was initiated by a clone.
+
+        # A better way is to check the last message ID serve or some cache.
+        # Given the constraints, we'll return the main app if no specific clone is found.
+        # In a real scenario, we'd have a serving_bot_id in the chats table.
+        for clone in clone_manager.clones.values():
+            try:
+                if await clone.get_chat(chat_id):
+                    return clone
+            except:
+                continue
+
+        return app
 
 async def get_db():
     # FastAPI dependency

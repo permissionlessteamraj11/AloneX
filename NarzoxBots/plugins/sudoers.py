@@ -3,15 +3,15 @@
 # This file is part of NarzoxBotsMusic
 
 
-from pyrogram import filters, types
+from pyrogram import Client, filters, types
 
 from NarzoxBots import app, db, lang
 from NarzoxBots.helpers import utils
 
 
-@app.on_message(filters.command(["addsudo", "delsudo", "rmsudo"]) & filters.user(app.owner))
+@Client.on_message(filters.command(["addsudo", "delsudo", "rmsudo"]) & filters.user(app.owner))
 @lang.language()
-async def _sudo(_, m: types.Message):
+async def _sudo(client: Client, m: types.Message):
     user = await utils.extract_user(m)
     if not user:
         return await m.reply_text(m.lang["user_not_found"])
@@ -34,14 +34,14 @@ async def _sudo(_, m: types.Message):
 
 o_mention = None
 
-@app.on_message(filters.command(["listsudo", "sudolist"]))
+@Client.on_message(filters.command(["listsudo", "sudolist"]))
 @lang.language()
-async def _listsudo(_, m: types.Message):
+async def _listsudo(client: Client, m: types.Message):
     global o_mention
     sent = await m.reply_text(m.lang["sudo_fetching"])
 
     if not o_mention:
-        o_mention = (await app.get_users(app.owner)).mention
+        o_mention = (await client.get_users(app.owner)).mention
     txt = m.lang["sudo_owner"].format(o_mention)
     sudoers = await db.get_sudoers()
     if sudoers:
@@ -49,7 +49,7 @@ async def _listsudo(_, m: types.Message):
 
     for user_id in sudoers:
         try:
-            user = (await app.get_users(user_id)).mention
+            user = (await client.get_users(user_id)).mention
             txt += f"\n- {user}"
         except:
             continue

@@ -3,15 +3,15 @@
 # This file is part of NarzoxBotsMusic
 
 
-from pyrogram import filters, types
+from pyrogram import Client, filters, types
 
 from NarzoxBots import app, config, db, lang, queue
 from NarzoxBots.helpers import Track, buttons, thumb
 
 
-@app.on_message(filters.command(["queue", "playing"]) & filters.group & ~app.bl_users)
+@Client.on_message(filters.command(["queue", "playing"]) & filters.group & ~app.bl_users)
 @lang.language()
-async def _queue_func(_, m: types.Message):
+async def _queue_func(client: Client, m: types.Message):
     if not await db.get_call(m.chat.id):
         return await m.reply_text(m.lang["not_playing"])
 

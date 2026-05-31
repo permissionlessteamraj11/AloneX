@@ -38,10 +38,16 @@ class Inline:
         if not remove:
             keyboard.append(
                 [
-                    self.ikb(text="▷", callback_data=f"controls resume {chat_id}"),
-                    self.ikb(text="II", callback_data="settings"),
+                    self.ikb(text="▶", callback_data=f"controls resume {chat_id}"),
+                    self.ikb(text="⏸", callback_data=f"controls pause {chat_id}"),
+                    self.ikb(text="⏭", callback_data=f"controls skip {chat_id}"),
+                    self.ikb(text="⏹", callback_data=f"controls stop {chat_id}"),
+                ]
+            )
+            keyboard.append(
+                [
                     self.ikb(
-                        text=_lang.get("close", "⌯ 𝐂ʟσsє ⌯"),
+                        text=_lang.get("close", "ᴄʟᴏsᴇ"),
                         callback_data="help close"),
                 ]
             )
@@ -54,18 +60,37 @@ class Inline:
         if back or cat != "main":
             rows = [
                 [
-                    self.ikb(text=_lang["back"], callback_data="help main"),
+                    self.ikb(text=_lang['back'], callback_data="help main"),
                     self.ikb(text=_lang["close"], callback_data="help close"),
                 ]
             ]
         else:
-            cbs = ["admins", "auth", "blist", "stats", "sudo", "play", "queue", "lang"]
-            buttons = [
-                self.ikb(text=_lang[f"help_{cb}"], callback_data=f"help_cat {cb}")
-                for cb in cbs
+            # cbs = ["admins", "auth", "blist", "stats", "sudo", "play", "queue", "lang"]
+            # Using indices to match en.json help_0, help_1, etc if applicable,
+            # but current en.json has help_admins, help_auth etc.
+            # Wait, en.json has "help_0": "𝐀ᴅᴍɪɴ", "help_1": "𝐀ᴜᴛʜ", etc.
+
+            rows = [
+                [
+                    self.ikb(text=_lang["help_0"], callback_data="help_cat admins"),
+                    self.ikb(text=_lang["help_1"], callback_data="help_cat auth"),
+                    self.ikb(text=_lang["help_2"], callback_data="help_cat blist"),
+                ],
+                [
+                    self.ikb(text=_lang["help_5"], callback_data="help_cat play"),
+                    self.ikb(text=_lang["help_6"], callback_data="help_cat queue"),
+                    self.ikb(text=_lang["help_3"], callback_data="help_cat lang"),
+                ],
+                [
+                    self.ikb(text=_lang["help_7"], callback_data="help_cat stats"),
+                    self.ikb(text=_lang["help_4"], callback_data="help_cat ping"),
+                    self.ikb(text=_lang["help_8"], callback_data="help_cat sudo"),
+                ],
+                [
+                    self.ikb(text=_lang["extra_btn"], callback_data="help_cat extra"),
+                    self.ikb(text=_lang["close"], callback_data="help close"),
+                ]
             ]
-            rows = [buttons[i : i + 3] for i in range(0, len(buttons), 3)]
-            rows.append([self.ikb(text=_lang["close"], callback_data="help close")])
 
         return self.ikm(rows)
 
@@ -170,22 +195,22 @@ class Inline:
         return self.ikm(
             [
                 [
-                    self.ikb(text="🎬 𝐘ᴏᴜ𝐓ᴜʙᴇ", url=url),
+                    self.ikb(text="ʏᴏᴜᴛᴜʙᴇ", url=url),
                 ]
             ]
         )
 
     def queue_markup(self, chat_id: int, text: str, playing: bool) -> types.InlineKeyboardMarkup:
-        _action = "pause" if playing else "resume"
         return self.ikm(
             [
                 [
-                    self.ikb(text=text, callback_data=f"controls {_action} {chat_id}"),
-                    self.ikb(text="𝐒ᴋɪᴘ", callback_data=f"controls skip {chat_id}"),
-                    self.ikb(text="𝐒ᴛᴏᴘ", callback_data=f"controls stop {chat_id}"),
+                    self.ikb(text="▶", callback_data=f"controls resume {chat_id}"),
+                    self.ikb(text="⏸", callback_data=f"controls pause {chat_id}"),
+                    self.ikb(text="⏭", callback_data=f"controls skip {chat_id}"),
+                    self.ikb(text="⏹", callback_data=f"controls stop {chat_id}"),
                 ],
                 [
-                    self.ikb(text="⌯ 𝐂ʟσsє ⌯", callback_data="help close")
+                    self.ikb(text="ᴄʟᴏsᴇ", callback_data="help close")
                 ]
             ]
         )

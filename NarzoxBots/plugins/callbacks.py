@@ -3,14 +3,14 @@
 # This file is part of NarzoxBotsMusic
 
 import re
-from pyrogram import filters, types
+from pyrogram import Client, filters, types
 from NarzoxBots import anon, app, db, lang, queue, tg, yt
 from NarzoxBots.helpers import admin_check, buttons, can_manage_vc
 
 
-@app.on_callback_query(filters.regex("cancel_dl") & ~app.bl_users)
+@Client.on_callback_query(filters.regex("cancel_dl") & ~app.bl_users)
 @lang.language()
-async def cancel_dl(_, query: types.CallbackQuery):
+async def cancel_dl(client: Client, query: types.CallbackQuery):
     try:
         await query.answer()
         await tg.cancel(query)
@@ -18,10 +18,10 @@ async def cancel_dl(_, query: types.CallbackQuery):
         print(f"Error in cancel_dl: {e}")
 
 
-@app.on_callback_query(filters.regex("controls") & ~app.bl_users)
+@Client.on_callback_query(filters.regex("controls") & ~app.bl_users)
 @lang.language()
 @can_manage_vc
-async def _controls(_, query: types.CallbackQuery):
+async def _controls(client: Client, query: types.CallbackQuery):
     try:
         args = query.data.split()
         action, chat_id = args[1], int(args[2])
@@ -74,14 +74,14 @@ async def _controls(_, query: types.CallbackQuery):
             m_id = queue.get_current(chat_id).message_id
             queue.force_add(chat_id, media, remove=pos)
             try:
-                await app.delete_messages(
+                await client.delete_messages(
                     chat_id=chat_id, message_ids=[m_id, media.message_id], revoke=True
                 )
                 media.message_id = None
             except:
                 pass
 
-            msg = await app.send_message(chat_id=chat_id, text=query.lang["play_next"])
+            msg = await client.send_message(chat_id=chat_id, text=query.lang["play_next"])
             if not media.file_path:
                 media.file_path = await yt.download(media.id, video=media.video)
             media.message_id = msg.id
@@ -120,9 +120,9 @@ async def _controls(_, query: types.CallbackQuery):
         await query.answer("An error occurred while processing the request.", show_alert=True)
 
 
-@app.on_callback_query(filters.regex(r"^help(_| )") & ~app.bl_users)
+@Client.on_callback_query(filters.regex(r"^help(_| )") & ~app.bl_users)
 @lang.language()
-async def _help(_, query: types.CallbackQuery):
+async def _help(client: Client, query: types.CallbackQuery):
     try:
         data = query.data.split()
         # Handle help_cat category
@@ -150,9 +150,9 @@ async def _help(_, query: types.CallbackQuery):
         print(f"Error in _help: {e}")
 
 
-@app.on_callback_query(filters.regex("clone_info") & ~app.bl_users)
+@Client.on_callback_query(filters.regex("clone_info") & ~app.bl_users)
 @lang.language()
-async def _clone_info(_, query: types.CallbackQuery):
+async def _clone_info(client: Client, query: types.CallbackQuery):
     try:
         await query.answer()
         await query.edit_message_text(
@@ -163,10 +163,10 @@ async def _clone_info(_, query: types.CallbackQuery):
         print(f"Error in _clone_info: {e}")
 
 
-@app.on_callback_query(filters.regex("settings") & ~app.bl_users)
+@Client.on_callback_query(filters.regex("settings") & ~app.bl_users)
 @lang.language()
 @admin_check
-async def _settings_cb(_, query: types.CallbackQuery):
+async def _settings_cb(client: Client, query: types.CallbackQuery):
     try:
         cmd = query.data.split()
         if len(cmd) == 1:

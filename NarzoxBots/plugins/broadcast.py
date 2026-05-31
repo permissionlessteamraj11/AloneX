@@ -6,16 +6,16 @@
 import os
 import asyncio
 
-from pyrogram import errors, filters, types
+from pyrogram import Client, errors, filters, types
 
 from NarzoxBots import app, db, lang
 
 
 broadcasting = False
 
-@app.on_message(filters.command(["broadcast"]) & app.sudoers)
+@Client.on_message(filters.command(["broadcast"]) & app.sudoers)
 @lang.language()
-async def _broadcast(_, message: types.Message):
+async def _broadcast(client: Client, message: types.Message):
     global broadcasting
     if not message.reply_to_message:
         return await message.reply_text(message.lang["gcast_usage"])
@@ -36,15 +36,17 @@ async def _broadcast(_, message: types.Message):
     chats.extend(groups + users)
     broadcasting = True
 
-    await msg.forward(app.logger)
-    await (await app.send_message(
-        chat_id=app.logger, 
-        text=message.lang["gcast_log"].format(
-            message.from_user.id,
-            message.from_user.mention,
-            message.text,
-        )
-    )).pin(disable_notification=False)
+    logger_id = getattr(client, "logger", None)
+    if logger_id:
+        await msg.forward(logger_id)
+        await (await client.send_message(
+            chat_id=logger_id,
+            text=message.lang["gcast_log"].format(
+                message.from_user.id,
+                message.from_user.mention,
+                message.text,
+            )
+        )).pin(disable_notification=False)
     await asyncio.sleep(5)
 
     failed = ""
@@ -83,19 +85,21 @@ async def _broadcast(_, message: types.Message):
     await sent.edit_text(text)
 
 
-@app.on_message(filters.command(["stop_gcast", "stop_broadcast"]) & app.sudoers)
+@Client.on_message(filters.command(["stop_gcast", "stop_broadcast"]) & app.sudoers)
 @lang.language()
-async def _stop_gcast(_, message: types.Message):
+async def _stop_gcast(client: Client, message: types.Message):
     global broadcasting
     if not broadcasting:
         return await message.reply_text(message.lang["gcast_inactive"])
 
     broadcasting = False
-    await (await app.send_message(
-        chat_id=app.logger,
-        text=message.lang["gcast_stop_log"].format(
-            message.from_user.id,
-            message.from_user.mention
-        )
-    )).pin(disable_notification=False)
+    logger_id = getattr(client, "logger", None)
+    if logger_id:
+        await (await client.send_message(
+            chat_id=logger_id,
+            text=message.lang["gcast_stop_log"].format(
+                message.from_user.id,
+                message.from_user.mention
+            )
+        )).pin(disable_notification=False)
     await message.reply_text(message.lang["gcast_stop"])

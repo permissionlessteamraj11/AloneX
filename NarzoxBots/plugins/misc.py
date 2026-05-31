@@ -6,15 +6,15 @@
 import asyncio
 import time
 
-from pyrogram import enums, errors, filters, types
+from pyrogram import Client, enums, errors, filters, types
 
 from NarzoxBots import anon, app, config, db, lang, queue, tasks, userbot, yt
 from NarzoxBots.helpers import buttons
 
 
-@app.on_message(filters.video_chat_started, group=19)
-@app.on_message(filters.video_chat_ended, group=20)
-async def _watcher_vc(_, m: types.Message):
+@Client.on_message(filters.video_chat_started, group=19)
+@Client.on_message(filters.video_chat_ended, group=20)
+async def _watcher_vc(client: Client, m: types.Message):
     await anon.stop(m.chat.id)
 
 
@@ -82,7 +82,9 @@ async def update_timer(length=10):
                     remove = False
                     timer = f"{time.strftime('%M:%S', time.gmtime(played))} | {timer} | -{time.strftime('%M:%S', time.gmtime(remaining))}"
 
-                await app.edit_message_reply_markup(
+                # Resolve the correct client for the chat
+                client = await db.get_client(chat_id)
+                await client.edit_message_reply_markup(
                     chat_id=chat_id,
                     message_id=message_id,
                     reply_markup=buttons.controls(
@@ -102,8 +104,9 @@ async def vc_watcher(sleep=15):
             participants = await client.get_participants(chat_id)
             if len(participants) < 2 and media.time > 30:
                 _lang = await lang.get_lang(chat_id)
+                client = await db.get_client(chat_id)
                 try:
-                    sent = await app.edit_message_reply_markup(
+                    sent = await client.edit_message_reply_markup(
                         chat_id=chat_id,
                         message_id=media.message_id,
                         reply_markup=buttons.controls(
