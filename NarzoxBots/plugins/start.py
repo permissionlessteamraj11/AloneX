@@ -5,13 +5,10 @@
 
 import asyncio
 from pyrogram import enums, filters, types, Client
-from sqlalchemy import select
 
 from NarzoxBots import app, config, db, lang
 from NarzoxBots.helpers import buttons, utils
-from NarzoxBots.database.db import async_session
-from NarzoxBots.database.models import GlobalSettings, Clone, CloneSettings
-
+from NarzoxBots.database.db import json_db
 
 @app.on_message(filters.command(["help"]) & filters.private & ~app.bl_users)
 @lang.language()
@@ -43,26 +40,28 @@ async def start(client: Client, message: types.Message):
     owner_link = "https://t.me/zolvid"
     clone_link = f"https://t.me/{app.username}"
 
-    async with async_session() as session:
-        if is_clone:
-            res = await session.execute(
-                select(CloneSettings).join(Clone).where(Clone.bot_username == client.me.username)
-            )
-            settings = res.scalar_one_or_none()
+    if is_clone:
+        target_clone_id = None
+        for cid, cdata in json_db.data["clones"].items():
+            if cdata.get("bot_username") == client.me.username:
+                target_clone_id = cid
+                break
+
+        if target_clone_id:
+            settings = json_db.data["clone_settings"].get(target_clone_id)
             if settings:
-                start_img = settings.welcome_media or start_img
-                support_link = settings.support_link or support_link
-                updates_link = settings.updates_link or updates_link
-                owner_link = settings.owner_link or owner_link
-                clone_link = settings.clone_link or clone_link
-        else:
-            res = await session.execute(select(GlobalSettings).where(GlobalSettings.id == 1))
-            settings = res.scalar_one_or_none()
-            if settings:
-                start_img = settings.welcome_banner or start_img
-                support_link = settings.support_link or support_link
-                updates_link = settings.updates_link or updates_link
-                owner_link = settings.owner_link or owner_link
+                start_img = settings.get("welcome_media") or start_img
+                support_link = settings.get("support_link") or support_link
+                updates_link = settings.get("updates_link") or updates_link
+                owner_link = settings.get("owner_link") or owner_link
+                clone_link = settings.get("clone_link") or clone_link
+    else:
+        settings = json_db.data["global_settings"].get("1")
+        if settings:
+            start_img = settings.get("welcome_banner") or start_img
+            support_link = settings.get("support_link") or support_link
+            updates_link = settings.get("updates_link") or updates_link
+            owner_link = settings.get("owner_link") or owner_link
 
     if private:
         user_mention = message.from_user.mention

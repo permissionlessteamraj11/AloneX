@@ -1,11 +1,8 @@
 import asyncio
 from pyrogram import Client, filters
 from NarzoxBots import config, logger
-from NarzoxBots.database.db import async_session
-from NarzoxBots.database.models import Clone, User, CloneSettings
+from NarzoxBots.database.db import json_db
 from NarzoxBots.services.encryption import encryption_service
-from sqlalchemy import select
-from sqlalchemy.orm import joinedload
 
 class CloneManager:
     def __init__(self):
@@ -26,6 +23,8 @@ class CloneManager:
             bot_token=bot_token,
             plugins=dict(root="NarzoxBots.plugins")
         )
+        # Custom attribute for easier tracking
+        client.bot_token = bot_token
 
         try:
             await client.start()
@@ -67,14 +66,11 @@ class CloneManager:
         return await self.start_clone(bot_token, assistant_session=assistant_session)
 
     async def load_all_clones(self):
-        async with async_session() as session:
-            result = await session.execute(
-                select(Clone).where(Clone.status == "active").options(joinedload(Clone.settings))
-            )
-            clones = result.scalars().all()
-            for clone in clones:
-                assistant_session = clone.settings.assistant_session if clone.settings else None
-                await self.start_clone(clone.bot_token, encrypted=True, assistant_session=assistant_session)
+        for cid, clone_data in json_db.data["clones"].items():
+            if clone_data.get("status") == "active":
+                settings = json_db.data["clone_settings"].get(cid)
+                assistant_session = settings.get("assistant_session") if settings else None
+                await self.start_clone(clone_data.get("bot_token"), encrypted=True, assistant_session=assistant_session)
 
         asyncio.create_task(self.health_check())
 
@@ -84,7 +80,15 @@ class CloneManager:
             for token, client in list(self.clones.items()):
                 try:
                     if not client.is_connected:
-                        await self.restart_clone(token)
+                        # Find assistant session from settings
+                        assistant_session = None
+                        for cid, cdata in json_db.data["clones"].items():
+                            if cdata.get("bot_token") == token:
+                                settings = json_db.data["clone_settings"].get(cid)
+                                if settings:
+                                    assistant_session = settings.get("assistant_session")
+                                break
+                        await self.restart_clone(token, assistant_session=assistant_session)
                 except:
                     pass
 
