@@ -2,16 +2,8 @@
 # Licensed under the MIT License.
 # This file is part of NarzoxBotsMusic
 
-from NarzoxBots.core.bot import Bot
-from NarzoxBots.core.calls import TgCall
-from NarzoxBots.core.dir import dir_setup
-from NarzoxBots.core.mongo import MongoDB
-from NarzoxBots.core.telegram import Telegram
-from NarzoxBots.core.userbot import Userbot
-from NarzoxBots.core.youtube import YouTube
-from NarzoxBots.database.db import db_instance as db
-from config import Config
 import logging
+from config import Config
 
 # Setup Logger
 logging.basicConfig(
@@ -23,13 +15,36 @@ logger = logging.getLogger("NarzoxBots")
 # Load Config
 config = Config()
 
+# Initialize Database
+from NarzoxBots.database.db import db_instance as db
+
+# Initialize Language
+from NarzoxBots.core.lang import Language
+lang = Language()
+
 # Initialize Core Components
-dir_setup()
+from NarzoxBots.core.dir import ensure_dirs
+ensure_dirs()
+
+from NarzoxBots.core.bot import Bot
 app = Bot()
+
+from NarzoxBots.core.userbot import Userbot
 userbot = Userbot()
-anon = TgCall()
-tg = Telegram()
+
+from NarzoxBots.core.youtube import YouTube
 yt = YouTube()
+
+from NarzoxBots.core.telegram import Telegram
+tg = Telegram()
+
+# Initialize Queue
+from NarzoxBots.helpers._queue import Queue
+queue = Queue()
+
+# TgCall depends on app, config, db, lang, logger, queue, userbot, yt
+from NarzoxBots.core.calls import TgCall
+anon = TgCall()
 
 async def stop():
     """
@@ -38,5 +53,4 @@ async def stop():
     await app.exit()
     await userbot.exit()
     await anon.exit()
-    # MongoDB close removed
     logger.info("All components stopped.")
