@@ -2,7 +2,6 @@
 # Licensed under the MIT License.
 # This file is part of NarzoxBotsMusic
 # ALONE-CODER
-# Maderchod Kar Edit Ab
 
 from pyrogram import enums, types
 from pyrogram.enums import ButtonStyle
@@ -54,22 +53,23 @@ class Inline:
 
 
     def help_markup(
-        self, _lang: dict, back: bool = False
+        self, _lang: dict, cat: str = "main", back: bool = False
     ) -> types.InlineKeyboardMarkup:
-        if back:
+        if back or cat != "main":
             rows = [
                 [
-                    self.ikb(text=_lang["back"], callback_data="help back", style=ButtonStyle.PRIMARY),
-                    self.ikb(text=_lang["close"], callback_data="help close", style=ButtonStyle.PRIMARY),
+                    self.ikb(text=_lang["back"], callback_data="help main", style=ButtonStyle.PRIMARY),
+                    self.ikb(text=_lang["close"], callback_data="help close", style=ButtonStyle.DANGER),
                 ]
             ]
         else:
-            cbs = ["admins", "auth", "blist", "stats", "sudo"]
+            cbs = ["admins", "auth", "blist", "stats", "sudo", "play", "queue", "lang"]
             buttons = [
-                self.ikb(text=_lang[f"help_{i}"], callback_data=f"help {cb}", style=ButtonStyle.PRIMARY)
-                for i, cb in enumerate(cbs)
+                self.ikb(text=_lang[f"help_{cb}"], callback_data=f"help_cat {cb}", style=ButtonStyle.PRIMARY)
+                for cb in cbs
             ]
             rows = [buttons[i : i + 3] for i in range(0, len(buttons), 3)]
+            rows.append([self.ikb(text=_lang["close"], callback_data="help close", style=ButtonStyle.DANGER)])
 
         return self.ikm(rows)
 
@@ -133,5 +133,71 @@ class Inline:
                         style=ButtonStyle.DANGER,
                     )
                 ],
+            ]
+        )
+
+    def start_key(
+        self,
+        _lang: dict,
+        private: bool,
+        bot_username: str,
+        support: str,
+        updates: str,
+        owner: str,
+        clone: str = None
+    ) -> types.InlineKeyboardMarkup:
+        if not private:
+            return self.ikm(
+                [
+                    [
+                        self.ikb(text=_lang["add_me"], url=f"https://t.me/{bot_username}?startgroup=true"),
+                    ],
+                    [
+                        self.ikb(text=_lang["support"], url=support),
+                        self.ikb(text=_lang["channel"], url=updates),
+                    ]
+                ]
+            )
+
+        return self.ikm(
+            [
+                [
+                    self.ikb(text=_lang["add_me"], url=f"https://t.me/{bot_username}?startgroup=true"),
+                ],
+                [
+                    self.ikb(text=_lang["help"], callback_data="help main"),
+                ],
+                [
+                    self.ikb(text=_lang["support"], url=support),
+                    self.ikb(text=_lang["channel"], url=updates),
+                ],
+                [
+                    self.ikb(text=_lang["clone_btn"], callback_data="clone_info"),
+                    self.ikb(text=_lang["owner_btn"], url=owner),
+                ]
+            ]
+        )
+
+    def yt_key(self, url: str) -> types.InlineKeyboardMarkup:
+        return self.ikm(
+            [
+                [
+                    self.ikb(text="🎬 𝐘ᴏᴜ𝐓ᴜʙᴇ", url=url),
+                ]
+            ]
+        )
+
+    def queue_markup(self, chat_id: int, text: str, playing: bool) -> types.InlineKeyboardMarkup:
+        _action = "pause" if playing else "resume"
+        return self.ikm(
+            [
+                [
+                    self.ikb(text=text, callback_data=f"controls {_action} {chat_id}"),
+                    self.ikb(text="𝐒ᴋɪᴘ", callback_data=f"controls skip {chat_id}"),
+                    self.ikb(text="𝐒ᴛᴏᴘ", callback_data=f"controls stop {chat_id}"),
+                ],
+                [
+                    self.ikb(text="⌯ 𝐂ʟσsє ⌯", callback_data="help close", style=ButtonStyle.DANGER)
+                ]
             ]
         )
