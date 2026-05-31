@@ -10,8 +10,8 @@ class Config:
         self.API_HASH = getenv("API_HASH") or "e58343b4c0193e293e391daf97603fcd"
 
         self.BOT_TOKEN = getenv("BOT_TOKEN")
-        self.MONGO_URL = getenv("MONGO_URL")
-        self.POSTGRES_URL = getenv("POSTGRES_URL", "postgresql+asyncpg://user:password@localhost/dbname")
+        self.MONGO_URL = getenv("MONGO_URL") # Optional now
+        self.POSTGRES_URL = getenv("POSTGRES_URL") # Optional now
         self.REDIS_URL = getenv("REDIS_URL", "redis://localhost:6379/0")
         self.ENCRYPTION_KEY = getenv("ENCRYPTION_KEY", "generate-a-secure-key-here")
 
@@ -43,7 +43,7 @@ class Config:
     def check(self):
         missing = [
             var
-            for var in ["API_ID", "API_HASH", "BOT_TOKEN", "MONGO_URL", "LOGGER_ID", "OWNER_ID", "SESSION1"]
+            for var in ["API_ID", "API_HASH", "BOT_TOKEN", "LOGGER_ID", "OWNER_ID", "SESSION1"]
             if not getattr(self, var)
         ]
         if missing:

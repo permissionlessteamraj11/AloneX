@@ -1,8 +1,6 @@
 import asyncio
 from NarzoxBots import app, logger
-from NarzoxBots.database.db import async_session
-from NarzoxBots.database.models import User, Clone, Broadcast
-from sqlalchemy import select
+from NarzoxBots.database.db import json_db
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated
 
 class BroadcastService:
@@ -31,26 +29,28 @@ class BroadcastService:
             except Exception:
                 failed += 1
 
-        async with async_session() as session:
-            result = await session.execute(select(Broadcast).where(Broadcast.id == broadcast_id))
-            broadcast = result.scalar_one_or_none()
-            if broadcast:
-                broadcast.sent_count = sent
-                broadcast.failed_count = failed
-                broadcast.blocked_count = blocked
-                broadcast.status = "completed"
-                await session.commit()
+        if broadcast_id and str(broadcast_id) in json_db.data["broadcasts"]:
+            json_db.data["broadcasts"][str(broadcast_id)].update({
+                "sent_count": sent,
+                "failed_count": failed,
+                "blocked_count": blocked,
+                "status": "completed"
+            })
+            await json_db._save()
 
 async def run_global_broadcast(message: "pyrogram.types.Message", admin_id: int):
-    async with async_session() as session:
-        # Create broadcast record
-        new_broadcast = Broadcast(sender_id=admin_id, message_data={"text": message.text or message.caption}, status="processing")
-        session.add(new_broadcast)
-        await session.commit()
+    broadcast_id = str(len(json_db.data["broadcasts"]) + 1)
+    json_db.data["broadcasts"][broadcast_id] = {
+        "id": int(broadcast_id),
+        "sender_id": admin_id,
+        "message_data": {"text": message.text or message.caption},
+        "status": "processing",
+        "created_at": None # Optional
+    }
+    await json_db._save()
 
-        # Get all users
-        result = await session.execute(select(User.id))
-        user_ids = [r[0] for r in result.all()]
+    # Get all users
+    user_ids = [int(uid) for uid in json_db.data["users"].keys()]
 
-        service = BroadcastService(app)
-        asyncio.create_task(service.broadcast_to_users(new_broadcast.id, user_ids, message))
+    service = BroadcastService(app)
+    asyncio.create_task(service.broadcast_to_users(int(broadcast_id), user_ids, message))

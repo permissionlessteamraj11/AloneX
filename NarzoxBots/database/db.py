@@ -1,13 +1,147 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker, joinedload
-from sqlalchemy import select, delete, update
+import json
+import os
+import asyncio
+from typing import List, Optional, Dict, Any
 from config import Config
-from .models import Base, User, Chat, Clone, CloneSettings, GlobalSettings, Broadcast, AuthUser
+from .models import User, Chat, Clone, CloneSettings, GlobalSettings, Broadcast, AuthUser
 
 config = Config()
+DB_PATH = "database.json"
 
-engine = create_async_engine(config.POSTGRES_URL, echo=False)
-async_session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+class JsonDatabase:
+    def __init__(self, path: str = DB_PATH):
+        self.path = path
+        self.data = {
+            "users": {},
+            "chats": {},
+            "clones": {},
+            "clone_settings": {},
+            "global_settings": {"1": GlobalSettings(id=1).to_dict()},
+            "broadcasts": {},
+            "auth_users": [],
+            "admin_actions": {}
+        }
+        self.lock = asyncio.Lock()
+        self._load()
+
+    def _load(self):
+        if os.path.exists(self.path):
+            try:
+                with open(self.path, "r") as f:
+                    self.data.update(json.load(f))
+            except Exception as e:
+                print(f"Error loading database: {e}")
+
+    async def _save(self):
+        async with self.lock:
+            with open(self.path, "w") as f:
+                json.dump(self.data, f, indent=4)
+
+    # General Query Helpers (Simulating some SQLAlchemy behavior)
+    async def get_all(self, table: str) -> List[Dict[str, Any]]:
+        return list(self.data.get(table, {}).values())
+
+    async def get_by_id(self, table: str, id: Any) -> Optional[Dict[str, Any]]:
+        return self.data.get(table, {}).get(str(id))
+
+    async def add(self, table: str, id: Any, item_data: Dict[str, Any]):
+        self.data.setdefault(table, {})[str(id)] = item_data
+        await self._save()
+
+    async def update(self, table: str, id: Any, **kwargs):
+        if str(id) in self.data.get(table, {}):
+            self.data[table][str(id)].update(kwargs)
+            await self._save()
+
+    async def delete(self, table: str, id: Any):
+        if str(id) in self.data.get(table, {}):
+            del self.data[table][str(id)]
+            await self._save()
+
+json_db = JsonDatabase()
+
+# Compatibility Layer: Mocking async_session and SQLAlchemy-like execution
+class MockResult:
+    def __init__(self, data):
+        self._data = data
+    def scalars(self):
+        return self
+    def all(self):
+        return self._data
+    def one_or_none(self):
+        return self._data[0] if self._data else None
+    def scalar_one_or_none(self):
+        return self._data[0] if self._data else None
+    def scalar(self):
+        return self._data[0] if self._data else None
+
+class JsonSession:
+    async def __aenter__(self):
+        return self
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+    async def execute(self, query):
+        # Extremely simplified query parser for the specific cases used in the bot
+        # This is a bit of a hack to avoid rewriting every single line of plugin code immediately
+        table_name = ""
+        if "FROM users" in str(query) or "User" in str(query): table_name = "users"
+        elif "FROM chats" in str(query) or "Chat" in str(query): table_name = "chats"
+        elif "FROM clones" in str(query) or "Clone" in str(query): table_name = "clones"
+        elif "FROM clone_settings" in str(query) or "CloneSettings" in str(query): table_name = "clone_settings"
+        elif "FROM global_settings" in str(query) or "GlobalSettings" in str(query): table_name = "global_settings"
+        elif "FROM auth_users" in str(query) or "AuthUser" in str(query): table_name = "auth_users"
+        elif "FROM broadcasts" in str(query) or "Broadcast" in str(query): table_name = "broadcasts"
+
+        # Try to extract ID from WHERE clause
+        query_str = str(query)
+        data = list(json_db.data.get(table_name, {}).values())
+
+        # Basic filtering logic (very limited)
+        if "id =" in query_str:
+            try:
+                target_id = query_str.split("id =")[1].split()[0].strip("():")
+                data = [d for d in data if str(d.get("id")) == target_id]
+            except: pass
+
+        # Convert back to Model objects for the plugins
+        models_map = {
+            "users": User, "chats": Chat, "clones": Clone,
+            "clone_settings": CloneSettings, "global_settings": GlobalSettings,
+            "auth_users": AuthUser, "broadcasts": Broadcast
+        }
+        model_cls = models_map.get(table_name)
+        if model_cls:
+            data = [model_cls.from_dict(d) for d in data]
+
+        return MockResult(data)
+
+    async def commit(self):
+        await json_db._save()
+
+    def add(self, model_obj):
+        table_name = model_obj.__class__.__name__.lower()
+        if not table_name.endswith('s'):
+            table_name += 's'
+        if table_name == "clonesettingss": table_name = "clone_settings"
+        elif table_name == "globalsettingss": table_name = "global_settings"
+        elif table_name == "authusers": table_name = "auth_users"
+
+        # Generate ID if missing
+        if getattr(model_obj, "id", None) is None:
+            existing_ids = [int(i) for i in json_db.data.get(table_name, {}).keys() if i.isdigit()]
+            model_obj.id = (max(existing_ids) + 1) if existing_ids else 1
+
+        json_db.data.setdefault(table_name, {})[str(model_obj.id)] = model_obj.to_dict()
+
+    async def delete(self, model_obj):
+        table_name = model_obj.__class__.__name__.lower()
+        if table_name == "clonesettings": table_name = "clone_settings"
+        if str(model_obj.id) in json_db.data.get(table_name, {}):
+            del json_db.data[table_name][str(model_obj.id)]
+
+def async_session():
+    return JsonSession()
 
 class Database:
     def __init__(self):
@@ -18,20 +152,15 @@ class Database:
         self.admins = {}
 
     async def connect(self):
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
         await self.load_cache()
 
     async def load_cache(self):
-        async with async_session() as session:
-            # Load Sudoers
-            res = await session.execute(select(User.id).where(User.is_sudo == True))
-            self.sudoers = set(res.scalars().all())
-            self.sudoers.add(config.OWNER_ID)
+        # Load Sudoers
+        self.sudoers = {int(u["id"]) for u in json_db.data["users"].values() if u.get("is_sudo")}
+        self.sudoers.add(config.OWNER_ID)
 
-            # Load Blacklisted Users
-            res = await session.execute(select(User.id).where(User.is_suspended == True))
-            self.bl_users = set(res.scalars().all())
+        # Load Blacklisted Users
+        self.bl_users = {int(u["id"]) for u in json_db.data["users"].values() if u.get("is_suspended")}
 
     async def get_call(self, chat_id: int):
         return chat_id in self.active_calls
@@ -49,79 +178,68 @@ class Database:
 
     # User Management
     async def is_user(self, user_id: int):
-        async with async_session() as session:
-            res = await session.execute(select(User).where(User.id == user_id))
-            return res.scalar_one_or_none() is not None
+        return str(user_id) in json_db.data["users"]
 
     async def add_user(self, user_id: int):
-        async with async_session() as session:
-            if not await self.is_user(user_id):
-                session.add(User(id=user_id))
-                await session.commit()
+        if not await self.is_user(user_id):
+            user = User(id=user_id)
+            json_db.data["users"][str(user_id)] = user.to_dict()
+            await json_db._save()
 
     async def get_users(self):
-        async with async_session() as session:
-            res = await session.execute(select(User.id))
-            return res.scalars().all()
+        return [int(uid) for uid in json_db.data["users"].keys()]
 
     # Chat Management
     async def is_chat(self, chat_id: int):
-        async with async_session() as session:
-            res = await session.execute(select(Chat).where(Chat.id == chat_id))
-            return res.scalar_one_or_none() is not None
+        return str(chat_id) in json_db.data["chats"]
 
     async def add_chat(self, chat_id: int):
-        async with async_session() as session:
-            if not await self.is_chat(chat_id):
-                session.add(Chat(id=chat_id))
-                await session.commit()
+        if not await self.is_chat(chat_id):
+            chat = Chat(id=chat_id)
+            json_db.data["chats"][str(chat_id)] = chat.to_dict()
+            await json_db._save()
 
     async def get_chats(self):
-        async with async_session() as session:
-            res = await session.execute(select(Chat.id))
-            return res.scalars().all()
+        return [int(cid) for cid in json_db.data["chats"].keys()]
 
     async def get_lang(self, chat_id: int):
-        async with async_session() as session:
-            res = await session.execute(select(Chat.lang).where(Chat.id == chat_id))
-            return res.scalar() or "en"
+        chat = json_db.data["chats"].get(str(chat_id))
+        return chat.get("lang", "en") if chat else "en"
 
     async def set_lang(self, chat_id: int, lang: str):
-        async with async_session() as session:
-            await session.execute(update(Chat).where(Chat.id == chat_id).values(lang=lang))
-            await session.commit()
+        if str(chat_id) in json_db.data["chats"]:
+            json_db.data["chats"][str(chat_id)]["lang"] = lang
+            await json_db._save()
 
     async def get_play_mode(self, chat_id: int):
-        async with async_session() as session:
-            res = await session.execute(select(Chat.admin_only).where(Chat.id == chat_id))
-            return res.scalar() or False
+        chat = json_db.data["chats"].get(str(chat_id))
+        return chat.get("admin_only", False) if chat else False
 
     async def set_play_mode(self, chat_id: int, admin_only: bool):
-        async with async_session() as session:
-            await session.execute(update(Chat).where(Chat.id == chat_id).values(admin_only=admin_only))
-            await session.commit()
+        if str(chat_id) in json_db.data["chats"]:
+            json_db.data["chats"][str(chat_id)]["admin_only"] = admin_only
+            await json_db._save()
 
     async def get_cmd_delete(self, chat_id: int):
-        async with async_session() as session:
-            res = await session.execute(select(Chat.cmd_delete).where(Chat.id == chat_id))
-            return res.scalar() or False
+        chat = json_db.data["chats"].get(str(chat_id))
+        return chat.get("cmd_delete", False) if chat else False
 
     async def set_cmd_delete(self, chat_id: int, cmd_delete: bool):
-        async with async_session() as session:
-            await session.execute(update(Chat).where(Chat.id == chat_id).values(cmd_delete=cmd_delete))
-            await session.commit()
+        if str(chat_id) in json_db.data["chats"]:
+            json_db.data["chats"][str(chat_id)]["cmd_delete"] = cmd_delete
+            await json_db._save()
 
     # Sudo Management
     async def add_sudo(self, user_id: int):
-        async with async_session() as session:
-            await session.execute(update(User).where(User.id == user_id).values(is_sudo=True))
-            await session.commit()
+        if str(user_id) in json_db.data["users"]:
+            json_db.data["users"][str(user_id)]["is_sudo"] = True
+            await json_db._save()
             self.sudoers.add(user_id)
 
     async def del_sudo(self, user_id: int):
-        async with async_session() as session:
-            await session.execute(update(User).where(User.id == user_id).values(is_sudo=False))
-            await session.commit()
+        if str(user_id) in json_db.data["users"]:
+            json_db.data["users"][str(user_id)]["is_sudo"] = False
+            await json_db._save()
             self.sudoers.discard(user_id)
 
     async def get_sudoers(self):
@@ -129,24 +247,22 @@ class Database:
 
     # Auth Management
     async def is_auth(self, chat_id: int, user_id: int):
-        async with async_session() as session:
-            res = await session.execute(
-                select(AuthUser).where(AuthUser.chat_id == chat_id, AuthUser.user_id == user_id)
-            )
-            return res.scalar_one_or_none() is not None
+        for auth in json_db.data["auth_users"]:
+            if auth["chat_id"] == chat_id and auth["user_id"] == user_id:
+                return True
+        return False
 
     async def add_auth(self, chat_id: int, user_id: int):
-        async with async_session() as session:
-            if not await self.is_auth(chat_id, user_id):
-                session.add(AuthUser(chat_id=chat_id, user_id=user_id))
-                await session.commit()
+        if not await self.is_auth(chat_id, user_id):
+            json_db.data["auth_users"].append({"chat_id": chat_id, "user_id": user_id})
+            await json_db._save()
 
     async def rm_auth(self, chat_id: int, user_id: int):
-        async with async_session() as session:
-            await session.execute(
-                delete(AuthUser).where(AuthUser.chat_id == chat_id, AuthUser.user_id == user_id)
-            )
-            await session.commit()
+        json_db.data["auth_users"] = [
+            a for a in json_db.data["auth_users"]
+            if not (a["chat_id"] == chat_id and a["user_id"] == user_id)
+        ]
+        await json_db._save()
 
     # Admin Management
     async def get_admins(self, chat_id: int, reload: bool = False):
@@ -157,22 +273,24 @@ class Database:
 
     # Blacklist Management
     async def add_blacklist(self, target_id: int):
-        async with async_session() as session:
-            if str(target_id).startswith("-100"):
-                await session.execute(update(Chat).where(Chat.id == target_id).values(is_blacklisted=True))
-            else:
-                await session.execute(update(User).where(User.id == target_id).values(is_suspended=True))
-            await session.commit()
-            self.bl_users.add(target_id)
+        if str(target_id).startswith("-100"):
+            if str(target_id) in json_db.data["chats"]:
+                json_db.data["chats"][str(target_id)]["is_blacklisted"] = True
+        else:
+            if str(target_id) in json_db.data["users"]:
+                json_db.data["users"][str(target_id)]["is_suspended"] = True
+        await json_db._save()
+        self.bl_users.add(target_id)
 
     async def del_blacklist(self, target_id: int):
-        async with async_session() as session:
-            if str(target_id).startswith("-100"):
-                await session.execute(update(Chat).where(Chat.id == target_id).values(is_blacklisted=False))
-            else:
-                await session.execute(update(User).where(User.id == target_id).values(is_suspended=False))
-            await session.commit()
-            self.bl_users.discard(target_id)
+        if str(target_id).startswith("-100"):
+            if str(target_id) in json_db.data["chats"]:
+                json_db.data["chats"][str(target_id)]["is_blacklisted"] = False
+        else:
+            if str(target_id) in json_db.data["users"]:
+                json_db.data["users"][str(target_id)]["is_suspended"] = False
+        await json_db._save()
+        self.bl_users.discard(target_id)
 
     @property
     def blacklisted(self):
@@ -181,10 +299,7 @@ class Database:
     async def get_blacklisted(self):
         return list(self.bl_users)
 
-    # Logger
     async def is_logger(self):
-        # This seems to be a toggle for enabling/disabling logging in some contexts
-        # For now, we'll return True if LOGGER_ID is set
         return bool(config.LOGGER_ID)
 
     async def get_assistant(self, chat_id: int):
@@ -195,11 +310,11 @@ class Database:
         return await self.get_assistant(chat_id)
 
 async def get_db():
-    async with async_session() as session:
-        yield session
+    # FastAPI dependency
+    yield JsonSession()
 
 async def init_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # Nothing to init for JSON but load it
+    pass
 
 db_instance = Database()

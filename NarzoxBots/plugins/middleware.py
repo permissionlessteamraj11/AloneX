@@ -1,8 +1,8 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
-from NarzoxBots.database.db import async_session
+from NarzoxBots import db, config
+from NarzoxBots.database.db import json_db
 from NarzoxBots.database.models import User
-from sqlalchemy import select
 
 @Client.on_message(group=-1) # Run before other handlers
 async def register_user_middleware(client: Client, message: Message):
@@ -13,19 +13,17 @@ async def register_user_middleware(client: Client, message: Message):
     username = message.from_user.username
     first_name = message.from_user.first_name
 
-    async with async_session() as session:
-        result = await session.execute(select(User).where(User.id == user_id))
-        user = result.scalar_one_or_none()
+    user_data = json_db.data["users"].get(str(user_id))
 
-        if not user:
-            new_user = User(
-                id=user_id,
-                username=username,
-                first_name=first_name
-            )
-            session.add(new_user)
-            await session.commit()
-        elif user.username != username or user.first_name != first_name:
-            user.username = username
-            user.first_name = first_name
-            await session.commit()
+    if not user_data:
+        new_user = User(
+            id=user_id,
+            username=username,
+            first_name=first_name
+        )
+        json_db.data["users"][str(user_id)] = new_user.to_dict()
+        await json_db._save()
+    elif user_data.get("username") != username or user_data.get("first_name") != first_name:
+        json_db.data["users"][str(user_id)]["username"] = username
+        json_db.data["users"][str(user_id)]["first_name"] = first_name
+        await json_db._save()

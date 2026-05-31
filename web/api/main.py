@@ -1,12 +1,9 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Body
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from sqlalchemy.ext.asyncio import AsyncSession
-from NarzoxBots.database.db import get_db, async_session
+from NarzoxBots.database.db import get_db, json_db
 from NarzoxBots.database.models import User, Chat, Clone, AdminAction, Broadcast, GlobalSettings, CloneSettings
 from NarzoxBots.services.clones.manager import clone_manager
 from NarzoxBots import app as main_bot, logger, config
-from sqlalchemy import select, func, update
-from sqlalchemy.orm import joinedload
 from jose import JWTError, jwt
 from datetime import datetime, timedelta, timezone
 import asyncio
@@ -47,39 +44,36 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     raise HTTPException(status_code=400, detail="Incorrect username or password")
 
 @app.get("/stats")
-async def get_stats(admin: str = Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
-    total_users = await db.execute(select(func.count(User.id)))
-    total_chats = await db.execute(select(func.count(Chat.id)))
-    active_clones = await db.execute(select(func.count(Clone.id)).where(Clone.status == "active"))
-    premium_users = await db.execute(select(func.count(User.id)).where(User.is_premium == True))
+async def get_stats(admin: str = Depends(get_current_admin)):
+    total_users = len(json_db.data["users"])
+    total_chats = len(json_db.data["chats"])
+    active_clones = len([c for c in json_db.data["clones"].values() if c.get("status") == "active"])
+    premium_users = len([u for u in json_db.data["users"].values() if u.get("is_premium")])
 
     return {
-        "total_users": total_users.scalar(),
-        "total_chats": total_chats.scalar(),
+        "total_users": total_users,
+        "total_chats": total_chats,
         "active_players": len(clone_manager.clones),
-        "premium_users": premium_users.scalar(),
-        "cloned_bots": active_clones.scalar(),
-        "revenue_tracking": premium_users.scalar() * 10
+        "premium_users": premium_users,
+        "cloned_bots": active_clones,
+        "revenue_tracking": premium_users * 10
     }
 
 @app.post("/api/premium/grant")
-async def grant_premium(user_id: int = Body(...), days: int = Body(0), admin: str = Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
-    expiry = datetime.now(timezone.utc) + timedelta(days=days) if days > 0 else None
-    await db.execute(
-        update(User).where(User.id == user_id).values(is_premium=True, premium_expiry=expiry)
-    )
-    await db.commit()
+async def grant_premium(user_id: int = Body(...), days: int = Body(0), admin: str = Depends(get_current_admin)):
+    expiry = (datetime.now(timezone.utc) + timedelta(days=days)).isoformat() if days > 0 else None
+    if str(user_id) in json_db.data["users"]:
+        json_db.data["users"][str(user_id)].update({"is_premium": True, "premium_expiry": expiry})
+        await json_db._save()
     return {"status": "success"}
 
 @app.post("/api/broadcast")
 async def global_broadcast(
     message: str = Body(...),
     target: str = Body("all"),
-    admin: str = Depends(get_current_admin),
-    db: AsyncSession = Depends(get_db)
+    admin: str = Depends(get_current_admin)
 ):
-    result = await db.execute(select(User.id))
-    user_ids = result.scalars().all()
+    user_ids = [int(uid) for uid in json_db.data["users"].keys()]
 
     async def run_broadcast():
         if target in ["all", "main"]:
@@ -89,8 +83,6 @@ async def global_broadcast(
 
         if target in ["all", "clones"]:
             for client in clone_manager.clones.values():
-                # Broadcast message to each clone bot's users is complex without
-                # per-clone user tracking. For now, we notify the clone instance.
                 try: await client.send_message(config.OWNER_ID, f"NARZOXBOTS BROADCAST:\n\n{message}")
                 except: pass
 
