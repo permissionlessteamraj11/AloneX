@@ -8,16 +8,16 @@ import platform
 import sys
 
 import psutil
-from pyrogram import __version__, filters, types
+from pyrogram import Client, __version__, filters, types
 from pytgcalls import __version__ as pytgver
 
 from NarzoxBots import app, config, db, lang, userbot
 from NarzoxBots.plugins import all_modules
 
 
-@app.on_message(filters.command(["stats"]) & filters.group & ~app.bl_users)
+@Client.on_message(filters.command(["stats"]) & filters.group & ~app.bl_users)
 @lang.language()
-async def _stats(_, m: types.Message):
+async def _stats(client: Client, m: types.Message):
     sent = await m.reply_photo(
         photo=config.PING_IMG,
         caption=m.lang["stats_fetching"],
@@ -25,7 +25,7 @@ async def _stats(_, m: types.Message):
 
     pid = os.getpid()
     _utext = m.lang["stats_user"].format(
-        app.name,
+        client.me.first_name,
         len(userbot.clients),
         config.AUTO_LEAVE,
         len(db.blacklisted),

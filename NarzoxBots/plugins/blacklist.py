@@ -3,14 +3,14 @@
 # This file is part of NarzoxBotsMusic
 
 
-from pyrogram import filters, types
+from pyrogram import Client, filters, types
 
 from NarzoxBots import app, db, lang
 
 
-@app.on_message(filters.command(["blacklist", "unblacklist", "whitelist"]) & app.sudoers)
+@Client.on_message(filters.command(["blacklist", "unblacklist", "whitelist"]) & app.sudoers)
 @lang.language()
-async def _blacklist(_, m: types.Message):
+async def _blacklist(client: Client, m: types.Message):
     if len(m.command) < 2:
         return await m.reply_text(m.lang["bl_usage"].format(m.command[0]))
 
@@ -19,7 +19,7 @@ async def _blacklist(_, m: types.Message):
         if not str(chat_id).startswith("@"):
             chat_id = int(chat_id)
         else:
-            chat_id = (await app.get_chat(chat_id)).id
+            chat_id = (await client.get_chat(chat_id)).id
     except:
         return await m.reply_text(m.lang["bl_invalid"])
 

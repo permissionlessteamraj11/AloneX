@@ -30,6 +30,13 @@ class CloneManager:
             await client.start()
             self.clones[bot_token] = client
 
+            # Proactively cache the log group peer
+            if config.LOGGER_ID:
+                try:
+                    await client.get_chat(config.LOGGER_ID)
+                except Exception as e:
+                    logger.warning(f"Clone @{client.me.username} failed to access log group: {e}")
+
             if assistant_session:
                 # Start custom assistant for premium users
                 assistant = Client(

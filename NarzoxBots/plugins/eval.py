@@ -12,16 +12,16 @@ import traceback
 from html import escape
 from typing import Any, Optional, Tuple
 
-from pyrogram import filters, types
+from pyrogram import Client, filters, types
 
 from NarzoxBots import anon, app, config, db, lang, userbot
 from NarzoxBots.helpers import format_exception, meval
 
 
-@app.on_message(filters.command(["eval", "exec"]) & filters.user(app.owner))
-@app.on_edited_message(filters.command(["eval", "exec"]) & filters.user(app.owner))
+@Client.on_message(filters.command(["eval", "exec"]) & filters.user(app.owner))
+@Client.on_edited_message(filters.command(["eval", "exec"]) & filters.user(app.owner))
 @lang.language()
-async def eval_handler(_, message: types.Message):
+async def eval_handler(client: Client, message: types.Message):
     if len(message.command) < 2:
         return await message.reply_text(message.lang["eval_inp"])
 
@@ -41,10 +41,10 @@ async def eval_handler(_, message: types.Message):
             "r": message.reply_to_message,
             "chat": message.chat,
             "user": message.from_user,
-            "app": app,
+            "app": client,
             "anon": anon,
             "db": db,
-            "client": app,
+            "client": client,
             "ub": userbot,
             "ikb": types.InlineKeyboardButton,
             "ikm": types.InlineKeyboardMarkup,

@@ -51,7 +51,10 @@ class Userbot(Client):
         try:
             if config.LOGGER_ID:
                 await client.get_chat(config.LOGGER_ID)
-                await client.send_message(config.LOGGER_ID, "Assistant Started")
+                try:
+                    await client.send_message(config.LOGGER_ID, "Assistant Started")
+                except:
+                    pass
         except Exception as ex:
             logger.warning(f"Assistant {num} failed to access log group: {ex}")
 

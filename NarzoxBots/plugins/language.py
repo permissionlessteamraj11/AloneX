@@ -3,24 +3,24 @@
 # This file is part of NarzoxBotsMusic
 
 
-from pyrogram import filters, types
+from pyrogram import Client, filters, types
 
 from NarzoxBots import app, db, lang
 from NarzoxBots.helpers import admin_check, buttons
 
 
-@app.on_message(filters.command(["lang", "language"]) & ~app.bl_users)
+@Client.on_message(filters.command(["lang", "language"]) & ~app.bl_users)
 @lang.language()
-async def _lang(_, m: types.Message):
+async def _lang(client: Client, m: types.Message):
     current = await db.get_lang(m.chat.id)
     keyboard = buttons.lang_markup(current)
     await m.reply_text(m.lang["lang_choose"], reply_markup=keyboard)
 
 
-@app.on_callback_query(filters.regex(r"^lang(?:_change|uage)") & ~app.bl_users)
+@Client.on_callback_query(filters.regex(r"^lang(?:_change|uage)") & ~app.bl_users)
 @lang.language()
 @admin_check
-async def _lang_cb(_, query: types.CallbackQuery):
+async def _lang_cb(client: Client, query: types.CallbackQuery):
     data = query.data.split()
     if data[0] == "language":
         current = await db.get_lang(query.message.chat.id)

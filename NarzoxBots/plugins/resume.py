@@ -3,16 +3,16 @@
 # This file is part of NarzoxBotsMusic
 
 
-from pyrogram import filters, types
+from pyrogram import Client, filters, types
 
 from NarzoxBots import anon, app, db, lang
 from NarzoxBots.helpers import buttons, can_manage_vc
 
 
-@app.on_message(filters.command(["resume"]) & filters.group & ~app.bl_users)
+@Client.on_message(filters.command(["resume"]) & filters.group & ~app.bl_users)
 @lang.language()
 @can_manage_vc
-async def _resume(_, m: types.Message):
+async def _resume(client: Client, m: types.Message):
     if not await db.get_call(m.chat.id):
         return await m.reply_text(m.lang["not_playing"])
 

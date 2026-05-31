@@ -5,16 +5,16 @@
 
 import time
 
-from pyrogram import filters, types
+from pyrogram import Client, filters, types
 
 from NarzoxBots import app, db, lang
 from NarzoxBots.helpers import admin_check, is_admin, utils
 
 
-@app.on_message(filters.command(["auth", "unauth"]) & filters.group & ~app.bl_users)
+@Client.on_message(filters.command(["auth", "unauth"]) & filters.group & ~app.bl_users)
 @lang.language()
 @admin_check
-async def _auth(_, m: types.Message):
+async def _auth(client: Client, m: types.Message):
     user = await utils.extract_user(m)
     if not user:
         return await m.reply_text(m.lang["user_not_found"])
@@ -32,9 +32,9 @@ async def _auth(_, m: types.Message):
 
 rel_hist = {}
 
-@app.on_message(filters.command(["admincache", "reload"]) & filters.group & ~app.bl_users)
+@Client.on_message(filters.command(["admincache", "reload"]) & filters.group & ~app.bl_users)
 @lang.language()
-async def _admincache(_, m: types.Message):
+async def _admincache(client: Client, m: types.Message):
     if m.from_user.id in rel_hist:
         if time.time() < rel_hist[m.from_user.id]:
             return await m.reply_text(m.lang["admin_cache_wait"])

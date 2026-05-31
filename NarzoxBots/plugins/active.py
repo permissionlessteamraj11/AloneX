@@ -5,14 +5,14 @@
 
 import os
 
-from pyrogram import filters, types
+from pyrogram import Client, filters, types
 
 from NarzoxBots import app, db, lang, queue
 
 
-@app.on_message(filters.command(["ac", "activevc"]) & app.sudoers)
+@Client.on_message(filters.command(["ac", "activevc"]) & app.sudoers)
 @lang.language()
-async def _activevc(_, m: types.Message):
+async def _activevc(client: Client, m: types.Message):
     if not db.active_calls:
         return await m.reply_text(m.lang["vc_empty"])
 

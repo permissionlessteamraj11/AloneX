@@ -5,7 +5,7 @@
 
 from pathlib import Path
 
-from pyrogram import filters, types
+from pyrogram import Client, filters, types
 
 from NarzoxBots import anon, app, config, db, lang, queue, tg, yt, logger
 from NarzoxBots.helpers import buttons, utils
@@ -20,7 +20,7 @@ def playlist_to_queue(chat_id: int, tracks: list) -> str:
     text = text[:1948] + "</blockquote>"
     return text
 
-@app.on_message(
+@Client.on_message(
     filters.command(["play", "playforce", "vplay", "vplayforce"])
     & filters.group
     & ~app.bl_users
@@ -28,7 +28,7 @@ def playlist_to_queue(chat_id: int, tracks: list) -> str:
 @lang.language()
 @checkUB
 async def play_hndlr(
-    _,
+    client: Client,
     m: types.Message,
     force: bool = False,
     m3u8: bool = False,
@@ -115,7 +115,7 @@ async def play_hndlr(
                 )
                 if tracks:
                     added = playlist_to_queue(m.chat.id, tracks)
-                    await app.send_message(
+                    await client.send_message(
                         chat_id=m.chat.id,
                         text=m.lang["playlist_queued"].format(len(tracks)) + added,
                     )
@@ -141,7 +141,7 @@ async def play_hndlr(
         if not tracks:
             return
         added = playlist_to_queue(m.chat.id, tracks)
-        await app.send_message(
+        await client.send_message(
             chat_id=m.chat.id,
             text=m.lang["playlist_queued"].format(len(tracks)) + added,
         )
