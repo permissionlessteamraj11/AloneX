@@ -17,7 +17,7 @@ async def premium_status(client: Client, message: Message):
             expiry = user.premium_expiry or "Lifetime"
             await message.reply_text(f"You are a Premium User!\nExpiry: {expiry}")
         else:
-            await message.reply_text("You are not a premium user. Contact @AloneUpdates to buy.")
+            await message.reply_text("You are not a premium user. Contact @NarzoxUpdates to buy.")
 
 @Client.on_message(filters.command("mybot") & filters.private)
 async def my_bot_status(client: Client, message: Message):

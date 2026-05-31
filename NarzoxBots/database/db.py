@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, joinedload
 from sqlalchemy import select, delete, update
 from config import Config
-from .models import Base, User, Chat, Clone, CloneSettings, GlobalSettings, Broadcast
+from .models import Base, User, Chat, Clone, CloneSettings, GlobalSettings, Broadcast, AuthUser
 
 config = Config()
 
@@ -15,6 +15,7 @@ class Database:
         self.notified = set()
         self.bl_users = set()
         self.sudoers = set()
+        self.admins = {}
 
     async def connect(self):
         async with engine.begin() as conn:
@@ -58,6 +59,11 @@ class Database:
                 session.add(User(id=user_id))
                 await session.commit()
 
+    async def get_users(self):
+        async with async_session() as session:
+            res = await session.execute(select(User.id))
+            return res.scalars().all()
+
     # Chat Management
     async def is_chat(self, chat_id: int):
         async with async_session() as session:
@@ -69,6 +75,11 @@ class Database:
             if not await self.is_chat(chat_id):
                 session.add(Chat(id=chat_id))
                 await session.commit()
+
+    async def get_chats(self):
+        async with async_session() as session:
+            res = await session.execute(select(Chat.id))
+            return res.scalars().all()
 
     async def get_lang(self, chat_id: int):
         async with async_session() as session:
@@ -116,12 +127,72 @@ class Database:
     async def get_sudoers(self):
         return list(self.sudoers)
 
+    # Auth Management
+    async def is_auth(self, chat_id: int, user_id: int):
+        async with async_session() as session:
+            res = await session.execute(
+                select(AuthUser).where(AuthUser.chat_id == chat_id, AuthUser.user_id == user_id)
+            )
+            return res.scalar_one_or_none() is not None
+
+    async def add_auth(self, chat_id: int, user_id: int):
+        async with async_session() as session:
+            if not await self.is_auth(chat_id, user_id):
+                session.add(AuthUser(chat_id=chat_id, user_id=user_id))
+                await session.commit()
+
+    async def rm_auth(self, chat_id: int, user_id: int):
+        async with async_session() as session:
+            await session.execute(
+                delete(AuthUser).where(AuthUser.chat_id == chat_id, AuthUser.user_id == user_id)
+            )
+            await session.commit()
+
+    # Admin Management
+    async def get_admins(self, chat_id: int, reload: bool = False):
+        if chat_id not in self.admins or reload:
+            from NarzoxBots.helpers import reload_admins
+            self.admins[chat_id] = await reload_admins(chat_id)
+        return self.admins[chat_id]
+
+    # Blacklist Management
+    async def add_blacklist(self, target_id: int):
+        async with async_session() as session:
+            if str(target_id).startswith("-100"):
+                await session.execute(update(Chat).where(Chat.id == target_id).values(is_blacklisted=True))
+            else:
+                await session.execute(update(User).where(User.id == target_id).values(is_suspended=True))
+            await session.commit()
+            self.bl_users.add(target_id)
+
+    async def del_blacklist(self, target_id: int):
+        async with async_session() as session:
+            if str(target_id).startswith("-100"):
+                await session.execute(update(Chat).where(Chat.id == target_id).values(is_blacklisted=False))
+            else:
+                await session.execute(update(User).where(User.id == target_id).values(is_suspended=False))
+            await session.commit()
+            self.bl_users.discard(target_id)
+
+    @property
+    def blacklisted(self):
+        return self.bl_users
+
     async def get_blacklisted(self):
         return list(self.bl_users)
+
+    # Logger
+    async def is_logger(self):
+        # This seems to be a toggle for enabling/disabling logging in some contexts
+        # For now, we'll return True if LOGGER_ID is set
+        return bool(config.LOGGER_ID)
 
     async def get_assistant(self, chat_id: int):
         from NarzoxBots import userbot
         return userbot.clients[0]
+
+    async def get_client(self, chat_id: int):
+        return await self.get_assistant(chat_id)
 
 async def get_db():
     async with async_session() as session:

@@ -1,128 +1,92 @@
 
 <h2 align="center">
-    𖢵 ᴀʅσηҽ χ мυѕι¢ 𖢵
+    𖢵 Narzox Bots Music 𖢵
 
 ★ 𝙷𝙴𝚁𝙾𝙺𝚄 + 𝚅𝙿𝚂 ★
 </h2>
 
-[![Typing SVG](https://readme-typing-svg.herokuapp.com/?lines=ㅤ+𝚆𝙴𝙻𝙲𝙾𝙼𝙴+𝚃𝙾+𝙰𝙻𝙾𝙽𝙴+𝙼𝚄𝚂𝙸𝙲+𝚁𝙴𝙿𝙾+;ㅤ+𝚃𝙷𝙸𝚂+𝙸𝚂+𝙰+𝙰𝙳𝚅𝙰𝙽𝙲𝙴+𝙼𝚄𝚂𝙸𝙲+𝙱𝙾𝚃;𝙿𝙾𝚆𝙴𝚁𝙴𝙳+𝙱𝚈+☞+𝗧𝗛𝗘+𝗧𝗘𝗔𝗠+𝗔𝗟𝗢𝗡𝗘)](https://github.com/TeamAloneOp)
+[![Typing SVG](https://readme-typing-svg.herokuapp.com/?lines=ㅤ+𝚆𝙴𝙻𝙲𝙾𝙼𝙴+𝚃𝙾+𝙽𝙰𝚁𝚉𝙾𝚇+𝙱𝙾𝚃𝚂+𝙼𝚄𝚂𝙸𝙲+𝚁𝙴𝙿𝙾+;ㅤ+𝚃𝙷𝙸𝚂+𝙸𝚂+𝙰+𝙰𝙳𝚅𝙰𝙽𝙲𝙴+𝙼𝚄𝚂𝙸𝙲+𝙱𝙾𝚃;𝙿𝙾𝚆𝙴𝚁𝙴𝙳+𝙱𝚈+☞+𝙽𝙰𝚁𝚉𝙾𝚇+𝙱𝙾𝚃𝚂)](https://github.com/TeamAloneOp)
 
 
 <b>Telegram Group Calls Streaming Bot</b><br>
 Supports YouTube, Spotify, Resso, Apple Music, SoundCloud and M3U8 links.
 
-<a href="https://github.com/TeamAloneOp/NarzoxBots/stargazers">
-    <img src="https://img.shields.io/github/stars/TeamAloneOp/NarzoxBots?color=blueviolet&logo=github&logoColor=black&style=for-the-badge" alt="Stars"/>
-</a>
-<a href="https://github.com/TeamAloneOp/NarzoxBots/network/members">
-    <img src="https://img.shields.io/github/forks/TeamAloneOp/NarzoxBots?color=blueviolet&logo=github&logoColor=black&style=for-the-badge" alt="Forks"/>
-</a>
-<a href="https://github.com/TeamAloneOp/NarzoxBots/blob/master/LICENSE">
-    <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License"/>
-</a>
-<a href="https://www.python.org/">
-    <img src="https://img.shields.io/badge/Written%20in-Python-blue?style=for-the-badge&logo=python" alt="Python"/>
-</a>
-
-
 <p align="center">
   <img src="https://litter.catbox.moe/v97ciy.jpg">
 </p>
-
-
-**𝘿𝙀𝙈𝙊 𝙏𝙀𝙎𝙏 𝘽𝙊𝙏 ➣ [˹ 𝞚𝙡𝞸𝞰𝞮 ✗ 𝙈𝙪𝙨𝙞𝙘™ [ 𝐍ᴏ 𝐀ᴅs ] 🥀­­­­­­­­­­­­­  ](https://t.me/AlonePvtBot)**
-
-
-
-<img src="https://readme-typing-svg.herokuapp.com?color=FF0000&width=420&lines=⚠️𝗙𝗢𝗥𝗞+𝗔𝗹𝗼𝗻𝗲𝗫+𝗥𝗘𝗣𝗢+𝗕𝗘𝗙𝗢𝗥𝗘+𝗗𝗘𝗣𝗟𝗢𝗬⚠️">
-
-
-NarzoxBotsMusic lets you stream high-quality and low-latency audio and video playback into telegram group video chats.<br>
-Built with Python, Pyrogram, and Py-TgCalls, it’s optimized for reliability and easy deployment on Heroku, VPS, or Docker.
-</div>
 
 <hr>
 
 <h2>🔥 Features</h2>
 
-- 🎧 Stream low-latency audio in real time to <b>Telegram group video chats</b>
-- 🌐 Supports multiple platforms like <b>YouTube, Spotify, Apple Music, SoundCloud</b>
+- 🎧 Stream low-latency audio in real time
+- 🌐 Supports YouTube, Spotify, Apple Music, SoundCloud
 - ⚡ Advanced queue management with auto-play
-- ⚙️ Easy deployment — works on Local, VPS, or Heroku
-- ❤️ Built with Python
+- ⚙️ Easy deployment on VPS or Heroku
+- 💎 Bot Cloning Feature
+- 📊 Powerful Admin Dashboard
 <hr>
 
-<h2>☁️ Manual Deployment</h2>
+<h2>🚀 Deployment Guide</h2>
 
-<h3 align="center">
-    ─「 ᴅᴇᴩʟᴏʏ ᴏɴ ʜᴇʀᴏᴋᴜ 」─
+### 1. Mandatory Environment Variables
 
-<h3> 𝗛𝗘𝗥𝗢𝗞𝗨 𝗗𝗘𝗣𝗟𝗢𝗬𝗠𝗘𝗡𝗧 𝗕𝗨𝗧𝗧𝗢𝗡 </h3>
-</h3>
+Before deploying, ensure you have these values ready:
 
-[![Deploy To Heroku](https://graph.org/file/826b0a2fc82db8328a113.png)](https://dashboard.heroku.com/new?template=https://github.com/TeamAloneOp/NarzoxBots)
+- `API_ID`: Your Telegram API ID from [my.telegram.org](https://my.telegram.org)
+- `API_HASH`: Your Telegram API Hash from [my.telegram.org](https://my.telegram.org)
+- `BOT_TOKEN`: Your Telegram Bot Token from [@BotFather](https://t.me/BotFather)
+- `MONGO_URL`: Your MongoDB Connection String
+- `POSTGRES_URL`: Your PostgreSQL Connection String (e.g., `postgresql+asyncpg://user:pass@host/db`)
+- `OWNER_ID`: Your Telegram User ID
+- `LOGGER_ID`: ID of the group where logs will be sent
+- `SESSION`: A Pyrogram String Session for the assistant bot
 
-<h2 align="center">
+### 2. VPS Deployment (Recommended)
 
-🔴「 𝗜𝗙 𝗔𝗡𝗬 𝗘𝗥𝗥𝗢𝗥 𝗧𝗛𝗘𝗡 𝗦𝗘𝗡𝗗 𝗦𝗦 𝗧𝗢 𝗗𝗠 」🔴
-[![ALONE](https://te.legra.ph/file/fa42213a5129d4a26dd3d.jpg)](https://t.me/ForRealAlone)
-</p>
-<h3 align="center">
-    ─「 ᴅᴇᴩʟᴏʏ ᴏɴ ʟᴏᴄᴀʟ ʜᴏsᴛ/ ᴠᴘs 」─
-</h3>
-
-### 🔧 Quick Setup
-
-1. **Upgrade & Update:**
+1. **Update System & Install Dependencies:**
    ```bash
    sudo apt-get update && sudo apt-get upgrade -y
-   ```
-
-2. **Install Required Packages:**
-   ```bash
    sudo apt-get install python3-pip ffmpeg -y
-   ```
-3. **Setting up PIP**
-   ```bash
    sudo pip3 install -U pip
    ```
-4. **Installing Node**
-   ```bash
-   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash && source ~/.bashrc && nvm install v18
-   ```
-5. **Clone the Repository**
+
+2. **Clone the Repository:**
    ```bash
    git clone https://github.com/TeamAloneOp/NarzoxBots && cd NarzoxBots
    ```
-6. **Install Requirements**
+
+3. **Install Requirements:**
    ```bash
    pip3 install -U -r requirements.txt
    ```
-7. **Installing tmux**
-    ```bash
-    sudo apt install tmux -y && tmux
-   ```
-8. **Editing Vars:**
+
+4. **Configure Environment:**
    ```bash
+   cp .env.example .env
+   # Edit .env with your favorite editor (nano/vim) or run setup
    bash setup
    ```
-9. **Run the Bot**
-    ```bash
-    bash start
-    ```
 
----
-━━━━━━━━━━━━━━━━━━━━
+5. **Start the Bot:**
+   ```bash
+   bash start
+   ```
 
-<h3 align="center">
-    ─「 sᴜᴩᴩᴏʀᴛ 」─
-</h3>
+### 3. Heroku Deployment
+
+1. Click the button below to deploy:
+
+[![Deploy To Heroku](https://graph.org/file/826b0a2fc82db8328a113.png)](https://dashboard.heroku.com/new?template=https://github.com/TeamAloneOp/NarzoxBots)
+
+2. Fill in the required environment variables.
+3. Once deployed, go to **Resources** and enable the `worker` dyno.
+
+<hr>
+
+<h2>☁️ Support</h2>
 
 <p align="center">
-<a href="https://telegram.me/AloneBotSupport"><img src="https://img.shields.io/badge/-Support%20Group-blue.svg?style=for-the-badge&logo=Telegram"></a>
+<a href="https://telegram.me/NarzoxSupport"><img src="https://img.shields.io/badge/-Support%20Group-blue.svg?style=for-the-badge&logo=Telegram"></a>
+<a href="https://telegram.me/NarzoxUpdates"><img src="https://img.shields.io/badge/-Support%20Channel-blue.svg?style=for-the-badge&logo=Telegram"></a>
 </p>
-
-<p align="center">
-<a href="https://telegram.me/AloneUpdates"><img src="https://img.shields.io/badge/-Support%20Channel-blue.svg?style=for-the-badge&logo=Telegram"></a>
-</p>
-
