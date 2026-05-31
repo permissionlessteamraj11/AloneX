@@ -13,12 +13,6 @@ pprint() {
 color_reset() { printf '\033[0m'; }
 
 [ "$EUID" -ne 0 ] && { pprint "You need sudo privileges. Exiting...\n" "cred"; exit 1; }
-yesnoprompt() {
-    stty raw -echo
-    answer=$(head -c1)
-    stty sane
-    [[ "$answer" =~ [Yy] ]]
-}
 
 update() {
     pprint "\n\nUpdating package list... "
@@ -50,15 +44,17 @@ API_ID=$1
 API_HASH=$2
 BOT_TOKEN=$3
 MONGO_URL=$4
-LOGGER_ID=$5
-SESSION=$6
-OWNER_ID=$7
+POSTGRES_URL=$5
+LOGGER_ID=$6
+SESSION=$7
+OWNER_ID=$8
+ENCRYPTION_KEY=$9
 EOF
 }
 
 
 clear
-pprint "Welcome to the NarzoxBotsMusic Installation Setup\n\n" "cmagenta"
+pprint "Welcome to the NarzoxBotsMusic Next-Gen Setup\n\n" "cmagenta"
 sleep 1
 
 update
@@ -76,9 +72,12 @@ read -rp "API HASH: " api_hash
 read -rp "BOT TOKEN: " bot_token
 read -rp "OWNER ID: " ownid
 read -rp "MONGO URL: " mongo_db
+read -rp "POSTGRES URL: " postgres_url
 read -rp "LOG GROUP ID: " logger
 read -rp "STRING SESSION: " string_session
+read -rp "ENCRYPTION KEY: " enc_key
 
-save_env_vars "$api_id" "$api_hash" "$bot_token" "$mongo_db" "$logger" "$string_session" "$ownid"
+save_env_vars "$api_id" "$api_hash" "$bot_token" "$mongo_db" "$postgres_url" "$logger" "$string_session" "$ownid" "$enc_key"
 
 pprint "\nYour variables have been saved! Start bot with: bash start\n" "cgreen"
+pprint "Start Supreme Panel with: uvicorn web.api.main:app --host 0.0.0.0 --port 8000\n" "cyellow"
