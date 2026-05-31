@@ -1,3 +1,6 @@
+import time
+boot = time.time()
+tasks = []
 # Copyright (c) 2025 NarzoxBots
 # Licensed under the MIT License.
 # This file is part of NarzoxBotsMusic

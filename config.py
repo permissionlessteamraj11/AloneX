@@ -15,7 +15,7 @@ class Config:
         self.REDIS_URL = getenv("REDIS_URL", "redis://localhost:6379/0")
         self.ENCRYPTION_KEY = getenv("ENCRYPTION_KEY", "generate-a-secure-key-here")
 
-        self.LOGGER_ID = int(getenv("LOGGER_ID") or "-100")
+        self.LOGGER_ID = int(getenv("LOGGER_ID") or "0")
         self.OWNER_ID = int(getenv("OWNER_ID") or "7524032836")
         
         self.SESSION1 = getenv("SESSION")
