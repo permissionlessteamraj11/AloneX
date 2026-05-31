@@ -2,11 +2,8 @@
 # Licensed under the MIT License.
 # This file is part of NarzoxBotsMusic
 
-
 import re
-
 from pyrogram import filters, types
-
 from NarzoxBots import anon, app, db, lang, queue, tg, yt
 from NarzoxBots.helpers import admin_check, buttons, can_manage_vc
 
@@ -107,7 +104,7 @@ async def _controls(_, query: types.CallbackQuery):
                 flags=re.DOTALL,
             )
             keyboard = buttons.controls(
-                chat_id, status=status if action != "resume" else None
+                chat_id, status=status if action != "resume" else None, _lang=query.lang
             )
         await query.edit_message_text(
             f"{mtext}\n\n<blockquote>{reply}</blockquote>", reply_markup=keyboard
@@ -116,28 +113,31 @@ async def _controls(_, query: types.CallbackQuery):
         pass
 
 
-@app.on_callback_query(filters.regex("help") & ~app.bl_users)
+@app.on_callback_query(filters.regex(r"^help(_| )") & ~app.bl_users)
 @lang.language()
 async def _help(_, query: types.CallbackQuery):
     data = query.data.split()
-    if len(data) == 1:
-        return await query.answer(url=f"https://t.me/{app.username}?start=help")
-
-    if data[1] == "back":
+    # Handle help_cat category
+    if query.data.startswith("help_cat"):
+        cat = data[1]
         return await query.edit_message_text(
-            text=query.lang["help_menu"], reply_markup=buttons.help_markup(query.lang)
+            text=query.lang[f"help_{cat}"],
+            reply_markup=buttons.help_markup(query.lang, cat),
         )
-    elif data[1] == "close":
+
+    # Handle help_main or help_close
+    action = query.data.split("_")[1] if "_" in query.data else "main"
+
+    if action == "main":
+        return await query.edit_message_text(
+            text=query.lang["help_menu"], reply_markup=buttons.help_markup(query.lang, "main")
+        )
+    elif action == "close":
         try:
             await query.message.delete()
-            return await query.message.reply_to_message.delete()
         except:
             pass
-
-    await query.edit_message_text(
-        text=query.lang[f"help_{data[1]}"],
-        reply_markup=buttons.help_markup(query.lang, True),
-    )
+        return
 
 
 @app.on_callback_query(filters.regex("settings") & ~app.bl_users)

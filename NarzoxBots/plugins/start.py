@@ -1,13 +1,16 @@
 # Copyright (c) 2025 NarzoxBots
 # Licensed under the MIT License.
 # This file is part of NarzoxBotsMusic
-#ALONE-CODER
+# ALONE-CODER
 
 import asyncio
-from pyrogram import enums, filters, types
+from pyrogram import enums, filters, types, Client
+from sqlalchemy import select
 
 from NarzoxBots import app, config, db, lang
 from NarzoxBots.helpers import buttons, utils
+from NarzoxBots.database.db import async_session
+from NarzoxBots.database.models import GlobalSettings, Clone, CloneSettings
 
 
 @app.on_message(filters.command(["help"]) & filters.private & ~app.bl_users)
@@ -22,27 +25,74 @@ async def _help(_, m: types.Message):
 
 @app.on_message(filters.command(["start"]))
 @lang.language()
-async def start(_, message: types.Message):
+async def start(client: Client, message: types.Message):
     if message.from_user.id in app.bl_users and message.from_user.id not in db.notified:
         return await message.reply_text(message.lang["bl_user_notify"])
 
     if len(message.command) > 1 and message.command[1] == "help":
-        return await _help(_, message)
+        return await _help(client, message)
 
     private = message.chat.type == enums.ChatType.PRIVATE
-    _text = (
-        message.lang["start_pm"].format(message.from_user.first_name, app.name)
-        if private
-        else message.lang["start_gp"].format(app.name)
+
+    # Check if it's a clone
+    is_clone = client.me.id != app.id
+
+    start_img = config.START_IMG
+    support_link = config.SUPPORT_CHAT
+    updates_link = config.SUPPORT_CHANNEL
+    owner_link = "https://t.me/zolvid"
+    clone_link = f"https://t.me/{app.username}"
+
+    async with async_session() as session:
+        if is_clone:
+            res = await session.execute(
+                select(CloneSettings).join(Clone).where(Clone.bot_username == client.me.username)
+            )
+            settings = res.scalar_one_or_none()
+            if settings:
+                start_img = settings.welcome_media or start_img
+                support_link = settings.support_link or support_link
+                updates_link = settings.updates_link or updates_link
+                owner_link = settings.owner_link or owner_link
+                clone_link = settings.clone_link or clone_link
+        else:
+            res = await session.execute(select(GlobalSettings).where(GlobalSettings.id == 1))
+            settings = res.scalar_one_or_none()
+            if settings:
+                start_img = settings.welcome_banner or start_img
+                support_link = settings.support_link or support_link
+                updates_link = settings.updates_link or updates_link
+                owner_link = settings.owner_link or owner_link
+
+    if private:
+        user_mention = message.from_user.mention
+        _text = message.lang["start_pm"].format(user_mention)
+    else:
+        _text = message.lang["start_gp"]
+
+    key = buttons.start_key(
+        message.lang,
+        private,
+        bot_username=client.me.username,
+        support=support_link,
+        updates=updates_link,
+        owner=owner_link,
+        clone=clone_link
     )
 
-    key = buttons.start_key(message.lang, private)
-    await message.reply_photo(
-        photo=config.START_IMG,
-        caption=_text,
-        reply_markup=key,
-        quote=not private,
-    )
+    if start_img:
+        await message.reply_photo(
+            photo=start_img,
+            caption=_text,
+            reply_markup=key,
+            quote=not private,
+        )
+    else:
+        await message.reply_text(
+            text=_text,
+            reply_markup=key,
+            quote=not private,
+        )
 
     if private:
         if await db.is_user(message.from_user.id):
