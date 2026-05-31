@@ -49,9 +49,11 @@ class Userbot(Client):
         client = clients[num]
         await client.start()
         try:
-            await client.send_message(config.LOGGER_ID, "Assistant Started")
+            if config.LOGGER_ID:
+                await client.get_chat(config.LOGGER_ID)
+                await client.send_message(config.LOGGER_ID, "Assistant Started")
         except Exception as ex:
-            logger.error(f"Assistant {num} failed to send message in log group: {ex}")
+            logger.warning(f"Assistant {num} failed to access log group: {ex}")
 
         client.id = ub.me.id
         client.name = ub.me.first_name
