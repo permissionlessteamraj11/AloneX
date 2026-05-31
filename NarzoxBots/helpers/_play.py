@@ -73,7 +73,7 @@ def checkUB(play):
                 if m.chat.username:
                     invite_link = m.chat.username
                     try:
-                        await client.resolve_peer(invite_link)
+                        pass
                     except:
                         pass
                 else:
@@ -111,7 +111,7 @@ def checkUB(play):
                     )
 
                 await umm.delete()
-                await client.resolve_peer(chat_id)
+                pass
 
         if await db.get_cmd_delete(chat_id):
             try:

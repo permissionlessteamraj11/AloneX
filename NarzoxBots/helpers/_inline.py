@@ -4,7 +4,6 @@
 # ALONE-CODER
 
 from pyrogram import enums, types
-from pyrogram.enums import ButtonStyle
 
 from NarzoxBots import app, config, lang
 from NarzoxBots.core.lang import lang_codes
@@ -24,8 +23,7 @@ class Inline:
         status: str = None,
         timer: str = None,
         remove: bool = False,
-        _lang: dict = None,
-    ) -> types.InlineKeyboardMarkup:
+        _lang: dict = None) -> types.InlineKeyboardMarkup:
         _lang = _lang or {}
         keyboard = []
         if status:
@@ -34,19 +32,17 @@ class Inline:
             )
         elif timer:
             keyboard.append(
-                [self.ikb(text=timer, callback_data=f"controls status {chat_id}", style=ButtonStyle.PRIMARY)]
+                [self.ikb(text=timer, callback_data=f"controls status {chat_id}")]
             )
 
         if not remove:
             keyboard.append(
                 [
-                    self.ikb(text="▷", callback_data=f"controls resume {chat_id}", style=ButtonStyle.SUCCESS),
+                    self.ikb(text="▷", callback_data=f"controls resume {chat_id}"),
                     self.ikb(text="II", callback_data="settings"),
                     self.ikb(
                         text=_lang.get("close", "⌯ 𝐂ʟσsє ⌯"),
-                        callback_data="help close",
-                        style=ButtonStyle.DANGER,
-                    ),
+                        callback_data="help close"),
                 ]
             )
         return self.ikm(keyboard)
@@ -58,18 +54,18 @@ class Inline:
         if back or cat != "main":
             rows = [
                 [
-                    self.ikb(text=_lang["back"], callback_data="help main", style=ButtonStyle.PRIMARY),
-                    self.ikb(text=_lang["close"], callback_data="help close", style=ButtonStyle.DANGER),
+                    self.ikb(text=_lang["back"], callback_data="help main"),
+                    self.ikb(text=_lang["close"], callback_data="help close"),
                 ]
             ]
         else:
             cbs = ["admins", "auth", "blist", "stats", "sudo", "play", "queue", "lang"]
             buttons = [
-                self.ikb(text=_lang[f"help_{cb}"], callback_data=f"help_cat {cb}", style=ButtonStyle.PRIMARY)
+                self.ikb(text=_lang[f"help_{cb}"], callback_data=f"help_cat {cb}")
                 for cb in cbs
             ]
             rows = [buttons[i : i + 3] for i in range(0, len(buttons), 3)]
-            rows.append([self.ikb(text=_lang["close"], callback_data="help close", style=ButtonStyle.DANGER)])
+            rows.append([self.ikb(text=_lang["close"], callback_data="help close")])
 
         return self.ikm(rows)
 
@@ -79,8 +75,7 @@ class Inline:
         buttons = [
             self.ikb(
                 text=f"{name} ({code}) {'✔️' if code == _lang else ''}",
-                callback_data=f"lang_change {code}",
-            )
+                callback_data=f"lang_change {code}")
             for code, name in langs.items()
         ]
         rows = [buttons[i : i + 2] for i in range(0, len(buttons), 2)]
@@ -98,9 +93,7 @@ class Inline:
                 [
                     self.ikb(
                         text=_text,
-                        callback_data=f"controls {_action} {chat_id} q",
-                        style=ButtonStyle.SUCCESS,
-                    )
+                        callback_data=f"controls {_action} {chat_id} q")
                 ]
             ]
         )
@@ -113,25 +106,20 @@ class Inline:
                 [
                     self.ikb(
                         text=lang["cd_delete"].format("✅" if cmd_delete else "❌"),
-                        callback_data=f"settings cmd_delete {chat_id}",
-                    ),
+                        callback_data=f"settings cmd_delete {chat_id}"),
                     self.ikb(
                         text=lang["admin_only"].format("✅" if admin_only else "❌"),
-                        callback_data=f"settings admin_only {chat_id}",
-                    ),
+                        callback_data=f"settings admin_only {chat_id}"),
                 ],
                 [
                     self.ikb(
                         text=lang["language"].format(language),
-                        callback_data=f"settings language {chat_id}",
-                    )
+                        callback_data=f"settings language {chat_id}")
                 ],
                 [
                     self.ikb(
                         text=lang["close"],
-                        callback_data="help close",
-                        style=ButtonStyle.DANGER,
-                    )
+                        callback_data="help close")
                 ],
             ]
         )
@@ -197,7 +185,7 @@ class Inline:
                     self.ikb(text="𝐒ᴛᴏᴘ", callback_data=f"controls stop {chat_id}"),
                 ],
                 [
-                    self.ikb(text="⌯ 𝐂ʟσsє ⌯", callback_data="help close", style=ButtonStyle.DANGER)
+                    self.ikb(text="⌯ 𝐂ʟσsє ⌯", callback_data="help close")
                 ]
             ]
         )
