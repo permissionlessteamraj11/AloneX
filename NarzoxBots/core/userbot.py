@@ -50,8 +50,8 @@ class Userbot(Client):
         await client.start()
         try:
             await client.send_message(config.LOGGER_ID, "Assistant Started")
-        except:
-            raise SystemExit(f"Assistant {num} failed to send message in log group.")
+        except Exception as ex:
+            logger.error(f"Assistant {num} failed to send message in log group: {ex}")
 
         client.id = ub.me.id
         client.name = ub.me.first_name
