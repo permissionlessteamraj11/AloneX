@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 # This file is part of NarzoxBotsMusic
 # ALONE-CODER
-# @ForRealAlone
+# @NarzoxOwner
 # @XoDrk
 
 import json

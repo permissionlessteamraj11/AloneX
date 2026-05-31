@@ -8,7 +8,7 @@ from NarzoxBots import app as main_bot, logger, config
 from sqlalchemy import select, func, update
 from sqlalchemy.orm import joinedload
 from jose import JWTError, jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import asyncio
 from fastapi.responses import HTMLResponse
 import hashlib
@@ -17,14 +17,14 @@ SECRET_KEY = config.ENCRYPTION_KEY
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 
-app = FastAPI(title="Supreme Panel API")
+app = FastAPI(title="NarzoxBots Panel API")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 PANEL_PASSWORD = hashlib.sha256(str(config.OWNER_ID).encode()).hexdigest()
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -64,7 +64,7 @@ async def get_stats(admin: str = Depends(get_current_admin), db: AsyncSession = 
 
 @app.post("/api/premium/grant")
 async def grant_premium(user_id: int = Body(...), days: int = Body(0), admin: str = Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
-    expiry = datetime.utcnow() + timedelta(days=days) if days > 0 else None
+    expiry = datetime.now(timezone.utc) + timedelta(days=days) if days > 0 else None
     await db.execute(
         update(User).where(User.id == user_id).values(is_premium=True, premium_expiry=expiry)
     )
@@ -91,7 +91,7 @@ async def global_broadcast(
             for client in clone_manager.clones.values():
                 # Broadcast message to each clone bot's users is complex without
                 # per-clone user tracking. For now, we notify the clone instance.
-                try: await client.send_message(config.OWNER_ID, f"SUPREME BROADCAST:\n\n{message}")
+                try: await client.send_message(config.OWNER_ID, f"NARZOXBOTS BROADCAST:\n\n{message}")
                 except: pass
 
     asyncio.create_task(run_broadcast())

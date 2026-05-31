@@ -15,7 +15,7 @@ class User(Base):
     premium_expiry = Column(DateTime, nullable=True)
     is_suspended = Column(Boolean, default=False)
     is_sudo = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.UTC))
 
     clones = relationship("Clone", back_populates="owner")
 
@@ -29,6 +29,13 @@ class Chat(Base):
     cmd_delete = Column(Boolean, default=False)
     is_blacklisted = Column(Boolean, default=False)
 
+class AuthUser(Base):
+    __tablename__ = "auth_users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    chat_id = Column(BigInteger, index=True)
+    user_id = Column(BigInteger)
+
 class Clone(Base):
     __tablename__ = "clones"
 
@@ -38,7 +45,7 @@ class Clone(Base):
     bot_username = Column(String(255), nullable=True)
     bot_name = Column(String(255), nullable=True)
     status = Column(String(50), default="active")
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.UTC))
     last_active = Column(DateTime, nullable=True)
 
     settings = relationship("CloneSettings", back_populates="clone", uselist=False)
@@ -91,7 +98,7 @@ class Broadcast(Base):
     sent_count = Column(Integer, default=0)
     failed_count = Column(Integer, default=0)
     blocked_count = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.UTC))
 
 class AdminAction(Base):
     __tablename__ = "admin_actions"
@@ -101,4 +108,4 @@ class AdminAction(Base):
     action = Column(String(255))
     target_id = Column(BigInteger, nullable=True)
     reason = Column(Text, nullable=True)
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.datetime.now(datetime.UTC))

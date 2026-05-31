@@ -14,32 +14,46 @@ from NarzoxBots import app, config, db, lang, logger, queue, userbot, yt
 from NarzoxBots.helpers import Media, Track, buttons, thumb
 
 
-class TgCall(PyTgCalls):
+class TgCall:
     def __init__(self):
         self.clients = []
 
+    def get_call_client(self, assistant_id: int):
+        for client in self.clients:
+            if client._app.me.id == assistant_id:
+                return client
+        return self.clients[0] if self.clients else None
+
     async def pause(self, chat_id: int) -> bool:
-        client = await db.get_assistant(chat_id)
+        assistant = await db.get_assistant(chat_id)
+        client = self.get_call_client(assistant.id)
+        if not client:
+            return False
         await db.playing(chat_id, paused=True)
         return await client.pause(chat_id)
 
     async def resume(self, chat_id: int) -> bool:
-        client = await db.get_assistant(chat_id)
+        assistant = await db.get_assistant(chat_id)
+        client = self.get_call_client(assistant.id)
+        if not client:
+            return False
         await db.playing(chat_id, paused=False)
         return await client.resume(chat_id)
 
     async def stop(self, chat_id: int) -> None:
-        client = await db.get_assistant(chat_id)
+        assistant = await db.get_assistant(chat_id)
+        client = self.get_call_client(assistant.id)
         try:
             queue.clear(chat_id)
             await db.remove_call(chat_id)
         except:
             pass
 
-        try:
-            await client.leave_call(chat_id, close=False)
-        except:
-            pass
+        if client:
+            try:
+                await client.leave_call(chat_id)
+            except:
+                pass
 
 
     async def play_media(
@@ -49,7 +63,11 @@ class TgCall(PyTgCalls):
         media: Media | Track,
         seek_time: int = 0,
     ) -> None:
-        client = await db.get_assistant(chat_id)
+        assistant = await db.get_assistant(chat_id)
+        client = self.get_call_client(assistant.id)
+        if not client:
+            return
+
         _lang = await lang.get_lang(chat_id)
         _thumb = (
             await thumb.generate(media)
@@ -163,7 +181,7 @@ class TgCall(PyTgCalls):
 
     async def ping(self) -> float:
         pings = [client.ping for client in self.clients]
-        return round(sum(pings) / len(pings), 2)
+        return round(sum(pings) / len(pings), 2) if pings else 0.0
 
 
     async def health_check(self) -> dict:
@@ -174,7 +192,7 @@ class TgCall(PyTgCalls):
                 if not client.is_connected:
                     status = "disconnected"
                 else:
-                    await client.get_me()
+                    await client._app.get_me()
             except Exception as e:
                 status = f"unhealthy: {str(e)}"
             results[f"assistant_{i+1}"] = status
@@ -185,8 +203,8 @@ class TgCall(PyTgCalls):
         @client.on_update()
         async def update_handler(_, update: types.Update) -> None:
             if isinstance(update, types.StreamEnded):
-                if update.stream_type == types.StreamEnded.Type.AUDIO:
-                    await self.play_next(update.chat_id)
+                # Using chat_id from update
+                await self.play_next(update.chat_id)
             elif isinstance(update, types.ChatUpdate):
                 if update.status in [
                     types.ChatUpdate.Status.KICKED,
@@ -204,3 +222,11 @@ class TgCall(PyTgCalls):
             self.clients.append(client)
             await self.decorators(client)
         logger.info("PyTgCalls client(s) started.")
+
+    async def exit(self) -> None:
+        for client in self.clients:
+            try:
+                await client.stop()
+            except:
+                pass
+        logger.info("PyTgCalls client(s) stopped.")
