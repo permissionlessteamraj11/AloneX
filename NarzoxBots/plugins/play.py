@@ -133,7 +133,11 @@ async def play_hndlr(
                     logger.error(f"Download Error: {e}")
                     return await sent.edit_text(m.lang["play_not_found"].format(config.SUPPORT_CHAT))
 
-        await anon.play_media(chat_id=m.chat.id, message=sent, media=file)
+        try:
+            await anon.play_media(chat_id=m.chat.id, message=sent, media=file)
+        except Exception as e:
+            logger.error(f"Playback Error: {e}")
+            return await sent.edit_text(f"An error occurred during playback: {e}")
         if not tracks:
             return
         added = playlist_to_queue(m.chat.id, tracks)
