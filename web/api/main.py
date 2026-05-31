@@ -1,8 +1,10 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
-from NarzoxBots.database.db import get_db
+from NarzoxBots.database.db import get_db, async_session
 from NarzoxBots.database.models import User, Clone, AdminAction, Broadcast
+from NarzoxBots.services.clones.manager import clone_manager
+from NarzoxBots import app as main_bot, logger
 from sqlalchemy import select, func
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
@@ -54,10 +56,87 @@ async def get_stats(admin: str = Depends(get_current_admin), db: AsyncSession = 
         "premium_users": premium_users.scalar()
     }
 
+@app.get("/api/clones")
+async def list_clones(admin: str = Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Clone))
+    clones = result.scalars().all()
+
+    statuses = await clone_manager.get_all_clones_status()
+
+    output = []
+    for c in clones:
+        output.append({
+            "id": c.id,
+            "owner_id": c.owner_id,
+            "bot_username": c.bot_username,
+            "bot_name": c.bot_name,
+            "status": c.status,
+            "is_connected": statuses.get(c.bot_token, {}).get("is_connected", False)
+        })
+    return output
+
+@app.post("/api/clones/{clone_id}/restart")
+async def restart_clone_api(clone_id: int, admin: str = Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Clone).where(Clone.id == clone_id))
+    clone = result.scalar_one_or_none()
+    if not clone:
+        raise HTTPException(status_code=404, detail="Clone not found")
+
+    await clone_manager.restart_clone(clone.bot_token)
+    return {"status": "success", "message": f"Clone {clone.bot_username} restarted"}
+
 @app.get("/", response_class=HTMLResponse)
 async def read_item():
     with open("web/templates/index.html") as f:
         return f.read()
+
+@app.get("/api/users")
+async def list_users(page: int = 1, limit: int = 20, admin: str = Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
+    offset = (page - 1) * limit
+    result = await db.execute(select(User).offset(offset).limit(limit))
+    users = result.scalars().all()
+    return users
+
+@app.post("/api/broadcast")
+async def global_broadcast(message: str, admin: str = Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
+    # Get all users
+    result = await db.execute(select(User))
+    users = result.scalars().all()
+    user_ids = [u.id for u in users]
+
+    # Create broadcast record
+    new_broadcast = Broadcast(
+        sender_id=int(admin),
+        message_data={"text": message},
+        status="processing",
+        total_users=len(user_ids)
+    )
+    db.add(new_broadcast)
+    await db.commit()
+    await db.refresh(new_broadcast)
+
+    # Start background broadcast task
+    async def run_broadcast():
+        sent = 0
+        for user_id in user_ids:
+            try:
+                await main_bot.send_message(user_id, message)
+                sent += 1
+                await asyncio.sleep(0.05)
+            except Exception as e:
+                logger.error(f"Broadcast failed for {user_id}: {e}")
+
+        async with async_session() as session:
+            result = await session.execute(select(Broadcast).where(Broadcast.id == new_broadcast.id))
+            b = result.scalar_one_or_none()
+            if b:
+                b.sent_count = sent
+                b.status = "completed"
+            await session.commit()
+
+    asyncio.create_task(run_broadcast())
+
+    return {"status": "success", "total_users": len(user_ids), "message": "Broadcast initiated in background"}
 
 @app.post("/admin/grant-premium/{user_id}")
 async def grant_premium(user_id: int, days: int, admin: str = Depends(get_current_admin), db: AsyncSession = Depends(get_db)):
