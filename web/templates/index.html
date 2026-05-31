@@ -1,56 +1,301 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Supreme Panel</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supreme Panel - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; }
-        .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h1 { color: #333; }
-        .stat { font-size: 24px; font-weight: bold; color: #007bff; }
+        .sidebar-item:hover { background-color: #374151; }
+        .sidebar-item.active { background-color: #1f2937; border-left: 4px solid #3b82f6; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
     </style>
 </head>
-<body>
-    <h1>Supreme Panel Dashboard</h1>
-    <div id="stats" class="card">
-        <p>Loading stats...</p>
+<body class="bg-gray-100 font-sans">
+    <div id="login-screen" class="min-h-screen flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-md w-96">
+            <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Supreme Panel Login</h1>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Admin ID (Owner ID)</label>
+                    <input type="text" id="username" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Password (Owner ID)</label>
+                    <input type="password" id="password" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition">Login</button>
+            </form>
+        </div>
     </div>
-    <div class="card">
-        <h3>Grant Premium</h3>
-        <input type="text" id="userId" placeholder="User ID">
-        <button onclick="grantPremium()">Grant</button>
+
+    <div id="main-panel" class="hidden flex min-h-screen">
+        <!-- Sidebar -->
+        <div class="w-64 bg-gray-800 text-white flex-shrink-0">
+            <div class="p-6 text-2xl font-bold border-b border-gray-700">Supreme Panel</div>
+            <nav class="mt-6">
+                <a href="#" onclick="showTab('dashboard')" class="sidebar-item active flex items-center py-3 px-6 transition duration-200" id="nav-dashboard">
+                    <i class="fas fa-tachometer-alt mr-3"></i> Dashboard
+                </a>
+                <a href="#" onclick="showTab('clones')" class="sidebar-item flex items-center py-3 px-6 transition duration-200" id="nav-clones">
+                    <i class="fas fa-robot mr-3"></i> Managed Clones
+                </a>
+                <a href="#" onclick="showTab('users')" class="sidebar-item flex items-center py-3 px-6 transition duration-200" id="nav-users">
+                    <i class="fas fa-users mr-3"></i> User Management
+                </a>
+                <a href="#" onclick="showTab('broadcast')" class="sidebar-item flex items-center py-3 px-6 transition duration-200" id="nav-broadcast">
+                    <i class="fas fa-bullhorn mr-3"></i> Global Broadcast
+                </a>
+                <a href="#" onclick="logout()" class="sidebar-item flex items-center py-3 px-6 transition duration-200 mt-auto text-red-400">
+                    <i class="fas fa-sign-out-alt mr-3"></i> Logout
+                </a>
+            </nav>
+        </div>
+
+        <!-- Content -->
+        <div class="flex-1 p-10">
+            <!-- Dashboard Tab -->
+            <div id="tab-dashboard" class="tab-content active">
+                <h2 class="text-3xl font-semibold text-gray-800 mb-8">Dashboard Overview</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                        <div class="text-gray-500 text-sm font-medium uppercase tracking-wider">Total Users</div>
+                        <div id="stat-total-users" class="text-3xl font-bold text-gray-800 mt-1">0</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                        <div class="text-gray-500 text-sm font-medium uppercase tracking-wider">Active Clones</div>
+                        <div id="stat-active-clones" class="text-3xl font-bold text-blue-600 mt-1">0</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                        <div class="text-gray-500 text-sm font-medium uppercase tracking-wider">Premium Users</div>
+                        <div id="stat-premium-users" class="text-3xl font-bold text-green-600 mt-1">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clones Tab -->
+            <div id="tab-clones" class="tab-content">
+                <h2 class="text-3xl font-semibold text-gray-800 mb-8">Managed Clones</h2>
+                <div class="bg-white shadow-md rounded-lg overflow-hidden">
+                    <table class="min-w-full leading-normal">
+                        <thead>
+                            <tr>
+                                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Bot Username</th>
+                                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Owner ID</th>
+                                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clones-list">
+                            <!-- Clones will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Users Tab -->
+            <div id="tab-users" class="tab-content">
+                <h2 class="text-3xl font-semibold text-gray-800 mb-8">User Management</h2>
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
+                    <h3 class="text-lg font-medium mb-4">Grant Premium</h3>
+                    <div class="flex gap-4">
+                        <input type="text" id="premium-user-id" placeholder="User ID" class="flex-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button onclick="grantPremium()" class="bg-green-600 text-white font-bold py-2 px-6 rounded hover:bg-green-700 transition">Grant 30 Days</button>
+                    </div>
+                </div>
+                <div class="bg-white shadow-md rounded-lg overflow-hidden">
+                    <table class="min-w-full leading-normal">
+                        <thead>
+                            <tr>
+                                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">User ID</th>
+                                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Username</th>
+                                <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Premium</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-list">
+                            <!-- Users will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Broadcast Tab -->
+            <div id="tab-broadcast" class="tab-content">
+                <h2 class="text-3xl font-semibold text-gray-800 mb-8">Global Broadcast</h2>
+                <div class="bg-white p-8 rounded-lg shadow-md max-w-2xl">
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Message Text</label>
+                        <textarea id="broadcast-message" rows="6" class="w-full p-4 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400" placeholder="Enter your message here..."></textarea>
+                    </div>
+                    <button onclick="sendBroadcast()" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded hover:bg-blue-700 transition flex items-center justify-center">
+                        <i class="fas fa-paper-plane mr-2"></i> Send to All Users
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
+        let currentTab = 'dashboard';
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            document.getElementById(`nav-${tabName}`).classList.add('active');
+            currentTab = tabName;
+
+            if (tabName === 'dashboard') fetchStats();
+            if (tabName === 'clones') fetchClones();
+            if (tabName === 'users') fetchUsers();
+        }
+
+        async function apiRequest(url, method = 'GET', body = null) {
+            const token = localStorage.getItem('supreme_token');
+            const headers = { 'Authorization': `Bearer ${token}` };
+            if (body) headers['Content-Type'] = 'application/json';
+
+            const options = { method, headers };
+            if (body) options.body = JSON.stringify(body);
+
+            const resp = await fetch(url, options);
+            if (resp.status === 401) {
+                logout();
+                return null;
+            }
+            return resp.json();
+        }
+
         async function fetchStats() {
-            const token = localStorage.getItem('token');
-            const resp = await fetch('/stats', {
-                headers: { 'Authorization': `Bearer ${token}` }
+            const data = await apiRequest('/stats');
+            if (data) {
+                document.getElementById('stat-total-users').innerText = data.total_users;
+                document.getElementById('stat-active-clones').innerText = data.active_clones;
+                document.getElementById('stat-premium-users').innerText = data.premium_users;
+            }
+        }
+
+        async function fetchClones() {
+            const clones = await apiRequest('/api/clones');
+            const list = document.getElementById('clones-list');
+            list.innerHTML = '';
+            if (clones) {
+                clones.forEach(clone => {
+                    const row = `
+                        <tr>
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">@${clone.bot_username}</td>
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">${clone.owner_id}</td>
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                <span class="relative inline-block px-3 py-1 font-semibold ${clone.is_connected ? 'text-green-900' : 'text-red-900'} leading-tight">
+                                    <span aria-hidden class="absolute inset-0 ${clone.is_connected ? 'bg-green-200' : 'bg-red-200'} opacity-50 rounded-full"></span>
+                                    <span class="relative">${clone.is_connected ? 'Connected' : 'Disconnected'}</span>
+                                </span>
+                            </td>
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                <button onclick="restartClone(${clone.id})" class="text-blue-600 hover:text-blue-900 font-bold">Restart</button>
+                            </td>
+                        </tr>
+                    `;
+                    list.innerHTML += row;
+                });
+            }
+        }
+
+        async function fetchUsers() {
+            const users = await apiRequest('/api/users');
+            const list = document.getElementById('users-list');
+            list.innerHTML = '';
+            if (users) {
+                users.forEach(user => {
+                    const row = `
+                        <tr>
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">${user.id}</td>
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">${user.username || 'N/A'}</td>
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">${user.is_premium ? '✅ Yes' : '❌ No'}</td>
+                        </tr>
+                    `;
+                    list.innerHTML += row;
+                });
+            }
+        }
+
+        document.getElementById('login-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('username', document.getElementById('username').value);
+            formData.append('password', document.getElementById('password').value);
+
+            const resp = await fetch('/token', {
+                method: 'POST',
+                body: formData
             });
-            const data = await resp.json();
-            document.getElementById('stats').innerHTML = `
-                <p>Total Users: <span class="stat">${data.total_users}</span></p>
-                <p>Active Clones: <span class="stat">${data.active_clones}</span></p>
-                <p>Premium Users: <span class="stat">${data.premium_users}</span></p>
-            `;
+
+            if (resp.ok) {
+                const data = await resp.json();
+                localStorage.setItem('supreme_token', data.access_token);
+                checkAuth();
+            } else {
+                alert('Login failed');
+            }
+        };
+
+        function checkAuth() {
+            if (localStorage.getItem('supreme_token')) {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('main-panel').classList.remove('hidden');
+                fetchStats();
+            } else {
+                document.getElementById('login-screen').classList.remove('hidden');
+                document.getElementById('main-panel').classList.add('hidden');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('supreme_token');
+            checkAuth();
         }
 
         async function grantPremium() {
-            const userId = document.getElementById('userId').value;
-            const token = localStorage.getItem('token');
-            const resp = await fetch(`/admin/grant-premium/${userId}?days=30`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            alert('Success');
+            const userId = document.getElementById('premium-user-id').value;
+            if (!userId) return alert('Enter User ID');
+
+            const resp = await apiRequest(`/admin/grant-premium/${userId}?days=30`, 'POST');
+            if (resp) {
+                alert('Premium granted successfully!');
+                fetchUsers();
+            }
         }
 
-        // Check for token or redirect
-        if(!localStorage.getItem('token')) {
-             // Simplified: just prompt for token if missing
-             const token = prompt("Enter Admin Token:");
-             localStorage.setItem('token', token);
+        async function restartClone(cloneId) {
+            if (!confirm('Are you sure you want to restart this clone?')) return;
+            const resp = await apiRequest(`/api/clones/${cloneId}/restart`, 'POST');
+            if (resp) {
+                alert(resp.message);
+                fetchClones();
+            }
         }
-        fetchStats();
+
+        async function sendBroadcast() {
+            const message = document.getElementById('broadcast-message').value;
+            if (!message) return alert('Enter message text');
+
+            const resp = await fetch(`/api/broadcast?message=${encodeURIComponent(message)}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('supreme_token')}` }
+            });
+
+            if (resp.ok) {
+                alert('Broadcast sent successfully!');
+                document.getElementById('broadcast-message').value = '';
+            } else {
+                alert('Failed to send broadcast');
+            }
+        }
+
+        checkAuth();
     </script>
 </body>
 </html>

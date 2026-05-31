@@ -115,27 +115,29 @@ class YouTube:
         if os.path.exists(file_path):
             return file_path
 
-        try:
-            ydl_opts = {
-                "format": "bestaudio/best" if not video else "best",
-                "outtmpl": file_path,
-                "cookiefile": self.get_cookies(),
-                "quiet": True,
-                "no_warnings": True,
-                "nocheckcertificate": True,
-            }
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                await asyncio.to_thread(ydl.download, [url])
+        for i in range(3): # 3 retries
+            try:
+                ydl_opts = {
+                    "format": "bestaudio/best" if not video else "best",
+                    "outtmpl": file_path,
+                    "cookiefile": self.get_cookies(),
+                    "quiet": True,
+                    "no_warnings": True,
+                    "nocheckcertificate": True,
+                }
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    await asyncio.to_thread(ydl.download, [url])
 
-            if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-                return file_path
-        except Exception as e:
-            logger.warning(f"Download error: {e}")
-            if os.path.exists(file_path):
-                try:
-                    os.remove(file_path)
-                except:
-                    pass
+                if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+                    return file_path
+            except Exception as e:
+                logger.warning(f"Download attempt {i+1} failed: {e}")
+                if os.path.exists(file_path):
+                    try:
+                        os.remove(file_path)
+                    except:
+                        pass
+                await asyncio.sleep(2)
         return None
 
     async def _write_file(self, file_path, response):

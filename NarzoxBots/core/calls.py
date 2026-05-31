@@ -166,6 +166,21 @@ class TgCall(PyTgCalls):
         return round(sum(pings) / len(pings), 2)
 
 
+    async def health_check(self) -> dict:
+        results = {}
+        for i, client in enumerate(self.clients):
+            status = "healthy"
+            try:
+                if not client.is_connected:
+                    status = "disconnected"
+                else:
+                    await client.get_me()
+            except Exception as e:
+                status = f"unhealthy: {str(e)}"
+            results[f"assistant_{i+1}"] = status
+        return results
+
+
     async def decorators(self, client: PyTgCalls) -> None:
         @client.on_update()
         async def update_handler(_, update: types.Update) -> None:
