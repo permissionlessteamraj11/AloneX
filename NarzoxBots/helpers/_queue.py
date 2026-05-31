@@ -2,7 +2,6 @@
 # Licensed under the MIT License.
 # This file is part of NarzoxBotsMusic
 
-
 from collections import defaultdict, deque
 from typing import Union
 

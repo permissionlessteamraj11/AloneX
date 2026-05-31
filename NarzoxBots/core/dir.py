@@ -5,6 +5,7 @@
 
 import shutil
 from pathlib import Path
+import static_ffmpeg
 
 from NarzoxBots import logger
 
@@ -13,6 +14,7 @@ def ensure_dirs():
     """
     Ensure that the necessary directories exist.
     """
+    static_ffmpeg.add_paths()
     if not shutil.which("ffmpeg"):
         raise RuntimeError("FFmpeg must be installed and accessible in the system PATH.")
 
