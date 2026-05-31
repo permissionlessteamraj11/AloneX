@@ -2,22 +2,17 @@
 # Licensed under the MIT License.
 # This file is part of NarzoxBotsMusic
 
-
 import asyncio
 import importlib
-
 from pyrogram import idle
-
 from NarzoxBots import (anon, app, config, db,
                    logger, stop, userbot, yt)
-from NarzoxBots.database.db import init_db
 from NarzoxBots.services.clones.manager import clone_manager
 from NarzoxBots.plugins import all_modules
 
-
 async def main():
     await db.connect()
-    await init_db()
+    # MongoDB connected removed
     await clone_manager.load_all_clones()
     await app.boot()
     await userbot.boot()
@@ -37,7 +32,6 @@ async def main():
 
     await idle()
     await stop()
-
 
 if __name__ == "__main__":
     try:
