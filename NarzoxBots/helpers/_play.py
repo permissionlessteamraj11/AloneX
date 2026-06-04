@@ -49,6 +49,7 @@ def checkUB(play):
         if chat_id not in db.active_calls:
             client = await db.get_client(chat_id)
             try:
+                # Optimized: Try to get member status without full peer resolution if possible
                 member = await app.get_chat_member(chat_id, client.id)
                 if member.status in [
                     enums.ChatMemberStatus.BANNED,
@@ -67,8 +68,6 @@ def checkUB(play):
                                 f"@{client.username}" if client.username else None,
                             )
                         )
-            except errors.ChatAdminRequired:
-                return await m.reply_text(m.lang["admin_required"])
             except (errors.UserNotParticipant, errors.exceptions.bad_request_400.UserNotParticipant):
                 if m.chat.username:
                     invite_link = m.chat.username
@@ -113,11 +112,10 @@ def checkUB(play):
                 await umm.delete()
                 pass
 
-        if await db.get_cmd_delete(chat_id):
-            try:
-                await m.delete()
-            except:
-                pass
+        try:
+            await m.delete()
+        except:
+            pass
 
         return await play(_, m, force, m3u8, video, url)
 

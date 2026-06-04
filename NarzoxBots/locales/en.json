@@ -157,5 +157,7 @@
     "owner_btn": "ᴍᴀɪɴᴛᴀɪɴᴇʀ",
     "help_btn": "ʜᴇʟᴘ",
     "help_clone": "<u><b>Clone commands:</b></u>\n\n/clone [bot_token]: Clone the bot and run your own instance.\n/removeclone: Stop and remove your cloned bot instance.",
-    "help_extra": "<u><b>Extra commands:</b></u>\n\n/stats: Shows the bot's stats.\n/premium: Check your premium status."
+    "help_extra": "<u><b>Extra commands:</b></u>\n\n/stats: Shows the bot's stats.\n/premium: Check your premium status.",
+    "help_moderation": "╔══════════════════╗\n      ⚙️ Moderation System\n╚══════════════════╝\n\nManage your group easily with these tools:\n\n¤ /kick  — Remove a user  \n¤ /ban  — Ban permanently  \n¤ /unban  — Lift ban  \n¤ /mute  — Disable messages  \n¤ /unmute  — Allow messages again  \n¤ /warn  — Add warning (3 = mute)\n¤ /warns  — View warnings  \n¤ /resetwarns  — Clear all warnings  \n¤ /promote  — make admin\n¤ /demote  — remove from admin  \n\n💡 Example:\nReply to a user or type  \n/ban @username\n\n/tagall message  [ Tag everyone ]\n/banall [ Owner only ]",
+    "mod_btn": "ᴍᴏᴅᴇʀᴀᴛɪᴏɴ"
 }
