@@ -137,6 +137,14 @@ class TgCall:
         except RTMPStreamingUnsupported:
             await self.stop(chat_id)
             await message.edit_text(_lang["error_rtmp"])
+        except Exception as e:
+            if "PeerIdInvalid" in str(e):
+                logger.error(f"PeerIdInvalid in play_media: {e}")
+                await message.edit_text("Assistant peer cache issue. Try /play again in a moment.")
+            else:
+                logger.error(f"Unknown error in play_media: {e}")
+                await message.edit_text(f"An error occurred: {type(e).__name__}")
+            await self.stop(chat_id)
 
 
     async def replay(self, chat_id: int) -> None:

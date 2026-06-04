@@ -88,6 +88,9 @@ class Inline:
                 ],
                 [
                     self.ikb(text=_lang["extra_btn"], callback_data="help_cat extra"),
+                    self.ikb(text=_lang["mod_btn"], callback_data="help_cat moderation"),
+                ],
+                [
                     self.ikb(text=_lang["close"], callback_data="help close"),
                 ]
             ]

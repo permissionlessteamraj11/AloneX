@@ -19,7 +19,8 @@ class JsonDatabase:
             "global_settings": {"1": GlobalSettings(id=1).to_dict()},
             "broadcasts": {},
             "auth_users": [],
-            "admin_actions": {}
+            "admin_actions": {},
+            "warns": {}
         }
         self.lock = asyncio.Lock()
         self._load()
@@ -270,6 +271,30 @@ class Database:
             from NarzoxBots.helpers import reload_admins
             self.admins[chat_id] = await reload_admins(chat_id)
         return self.admins[chat_id]
+
+    # Warn Management
+    async def get_warns(self, chat_id: int, user_id: int) -> int:
+        chat_warns = json_db.data.get("warns", {}).get(str(chat_id), {})
+        return chat_warns.get(str(user_id), 0)
+
+    async def add_warn(self, chat_id: int, user_id: int) -> int:
+        if str(chat_id) not in json_db.data["warns"]:
+            json_db.data["warns"][str(chat_id)] = {}
+
+        current_warns = json_db.data["warns"][str(chat_id)].get(str(user_id), 0)
+        new_warns = current_warns + 1
+        json_db.data["warns"][str(chat_id)][str(user_id)] = new_warns
+        await json_db._save()
+        return new_warns
+
+    async def reset_warns(self, chat_id: int, user_id: int = None):
+        if str(chat_id) in json_db.data["warns"]:
+            if user_id:
+                if str(user_id) in json_db.data["warns"][str(chat_id)]:
+                    del json_db.data["warns"][str(chat_id)][str(user_id)]
+            else:
+                json_db.data["warns"][str(chat_id)] = {}
+            await json_db._save()
 
     # Blacklist Management
     async def add_blacklist(self, target_id: int):

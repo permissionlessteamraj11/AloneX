@@ -13,8 +13,12 @@ from NarzoxBots.helpers import buttons
 
 
 @Client.on_message(filters.video_chat_started, group=19)
+async def video_chat_started_hndlr(client: Client, m: types.Message):
+    await m.reply_text("Video chat started")
+
 @Client.on_message(filters.video_chat_ended, group=20)
-async def _watcher_vc(client: Client, m: types.Message):
+async def video_chat_ended_hndlr(client: Client, m: types.Message):
+    await m.reply_text("Video chat off")
     await anon.stop(m.chat.id)
 
 
