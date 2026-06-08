@@ -17,6 +17,7 @@ class Bot(pyrogram.Client):
             bot_token=config.BOT_TOKEN,
             parse_mode=pyrogram.enums.ParseMode.HTML,
             max_concurrent_transmissions=7,
+            plugins=dict(root="NarzoxBots.plugins"),
         )
         self.owner = config.OWNER_ID
         self.logger = config.LOGGER_ID
