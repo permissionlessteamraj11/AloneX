@@ -108,14 +108,34 @@ class YouTube:
 
         url = f"https://www.youtube.com/watch?v={video_id}" if len(video_id) == 11 else video_id
 
+        # Highly advanced: Use direct stream URL for instant playback
+        for i in range(3):
+            try:
+                ydl_opts = {
+                    "format": "bestaudio/best" if not video else "best",
+                    "quiet": True,
+                    "no_warnings": True,
+                    "nocheckcertificate": True,
+                    "cookiefile": self.get_cookies(),
+                    "skip_download": True,
+                    "extract_flat": "in_playlist",
+                }
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = await asyncio.to_thread(ydl.extract_info, url, download=False)
+                    if info:
+                        return info.get("url")
+            except Exception as e:
+                logger.warning(f"Stream extraction attempt {i+1} failed: {e}")
+                await asyncio.sleep(1)
+
+        # Fallback to local download if streaming extraction fails (though URLs are preferred)
         os.makedirs(DOWNLOAD_DIR, exist_ok=True)
         ext = "mp4" if video else "mp3"
         file_path = os.path.join(DOWNLOAD_DIR, f"{video_id}.{ext}")
-
         if os.path.exists(file_path):
             return file_path
 
-        for i in range(3): # 3 retries
+        for i in range(2):
             try:
                 ydl_opts = {
                     "format": "bestaudio/best" if not video else "best",
@@ -127,17 +147,14 @@ class YouTube:
                 }
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     await asyncio.to_thread(ydl.download, [url])
-
                 if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
                     return file_path
             except Exception as e:
-                logger.warning(f"Download attempt {i+1} failed: {e}")
+                logger.warning(f"Fallback download attempt {i+1} failed: {e}")
                 if os.path.exists(file_path):
-                    try:
-                        os.remove(file_path)
-                    except:
-                        pass
-                await asyncio.sleep(2)
+                    try: os.remove(file_path)
+                    except: pass
+                await asyncio.sleep(1)
         return None
 
     async def _write_file(self, file_path, response):

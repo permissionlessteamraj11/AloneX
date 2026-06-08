@@ -89,7 +89,7 @@ class TgCall:
                 if media.video
                 else types.MediaStream.Flags.IGNORE
             ),
-            ffmpeg_parameters=f"-ss {seek_time}" if seek_time > 1 else None,
+            ffmpeg_parameters=(f"-ss {seek_time} " if seek_time > 1 else "") + "-analyzeduration 0 -probesize 32",
         )
         try:
             await client.play(
