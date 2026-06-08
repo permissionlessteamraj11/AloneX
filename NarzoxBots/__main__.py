@@ -3,12 +3,10 @@
 # This file is part of NarzoxBotsMusic
 
 import asyncio
-import importlib
 from pyrogram import idle
 from NarzoxBots import (anon, app, config, db,
                    logger, stop, userbot, yt)
 from NarzoxBots.services.clones.manager import clone_manager
-from NarzoxBots.plugins import all_modules
 
 async def main():
     await db.connect()
@@ -17,10 +15,6 @@ async def main():
     await app.boot()
     await userbot.boot()
     await anon.boot()
-
-    for module in all_modules:
-        importlib.import_module(f"NarzoxBots.plugins.{module}")
-    logger.info(f"Loaded {len(all_modules)} modules.")
 
     if config.COOKIES_URL:
         await yt.save_cookies(config.COOKIES_URL)
