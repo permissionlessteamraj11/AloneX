@@ -92,6 +92,62 @@ async def set_support(client: Client, message: Message):
 async def set_footer(client: Client, message: Message):
     await update_clone_setting(client, message, "custom_footer", "Custom footer updated!")
 
+@Client.on_message(filters.command("setassistant") & filters.private)
+async def set_assistant_session(client: Client, message: Message):
+    if client.me.id == app.me.id: return
+    if len(message.command) < 2:
+        return await message.reply_text("Usage: /setassistant [SESSION_STRING]")
+
+    session = message.text.split(None, 1)[1]
+    clone_id, settings = await get_clone_and_settings(client.me.username, message.from_user.id)
+    if settings:
+        json_db.data["clone_settings"][clone_id]["assistant_session"] = session
+        await json_db._save()
+        await message.reply_text("Assistant session updated! Restarting clone to apply changes...")
+        clone_data = json_db.data["clones"][clone_id]
+        from NarzoxBots.services.clones.manager import clone_manager
+        await clone_manager.restart_clone(clone_data.get("bot_token"), assistant_session=session)
+    else:
+        await message.reply_text("Unauthorized.")
+
+@Client.on_message(filters.command(["config", "botsettings"]) & filters.private)
+async def bot_config(client: Client, message: Message):
+    if client.me.id == app.me.id: return
+    clone_id, settings = await get_clone_and_settings(client.me.username, message.from_user.id)
+
+    if not settings:
+        return await message.reply_text("Unauthorized.")
+
+    text = (
+        f"🛠 **Bot Configuration: @{client.me.username}**\n\n"
+        f"**Welcome Text:** {settings.get('welcome_text')}\n"
+        f"**Support:** {settings.get('support_link')}\n"
+        f"**Updates:** {settings.get('updates_link')}\n"
+        f"**Assistant:** {'Set' if settings.get('assistant_session') else 'Not Set'}\n\n"
+        f"**Music Enabled:** {'✅' if settings.get('music_enabled', True) else '❌'}\n"
+        f"**Welcome Enabled:** {'✅' if settings.get('welcome_enabled', True) else '❌'}\n"
+        f"**Maintenance:** {'✅' if settings.get('maintenance_mode', False) else '❌'}\n"
+    )
+
+    buttons = [
+        [
+            InlineKeyboardButton("Edit Welcome", callback_data="edit_welcome_config"),
+            InlineKeyboardButton("Edit Support", callback_data="edit_support_config")
+        ],
+        [
+            InlineKeyboardButton("Edit Updates", callback_data="edit_updates_config"),
+            InlineKeyboardButton("Assistant", callback_data="edit_assistant_config")
+        ],
+        [
+            InlineKeyboardButton("Music", callback_data="toggle_flag music_enabled"),
+            InlineKeyboardButton("Welcome", callback_data="toggle_flag welcome_enabled"),
+            InlineKeyboardButton("Maintenance", callback_data="toggle_flag maintenance_mode")
+        ],
+        [InlineKeyboardButton("Close", callback_data="help close")]
+    ]
+
+    await message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons))
+
 @Client.on_message(filters.command("clonestats") & filters.private)
 async def clone_stats(client: Client, message: Message):
     if client.me.id == app.me.id: return

@@ -3,8 +3,9 @@
 # This file is part of NarzoxBotsMusic
 
 import re
+import asyncio
 from pyrogram import Client, filters, types
-from NarzoxBots import anon, app, db, lang, queue, tg, yt
+from NarzoxBots import anon, app, db, lang, queue, tg, yt, logger
 from NarzoxBots.helpers import admin_check, buttons, can_manage_vc
 
 
@@ -196,3 +197,60 @@ async def _settings_cb(client: Client, query: types.CallbackQuery):
         )
     except Exception as e:
         print(f"Error in _settings_cb: {e}")
+
+
+@Client.on_callback_query(filters.regex(r"^edit_") & ~app.bl_users)
+async def _config_callbacks(client: Client, query: types.CallbackQuery):
+    try:
+        data = query.data
+        clone_id = None
+        for cid, cdata in db.json_db.data["clones"].items():
+            if cdata.get("bot_username") == client.me.username:
+                clone_id = cid
+                break
+
+        if not clone_id:
+            return await query.answer("Unauthorized.", show_alert=True)
+
+        settings = db.json_db.data["clone_settings"].get(clone_id)
+        if not settings or query.from_user.id != db.json_db.data["clones"][clone_id].get("owner_id"):
+            return await query.answer("Only the bot owner can use this.", show_alert=True)
+
+        if data == "edit_welcome_config":
+            field = "welcome_text"
+            prompt = "Send the new welcome text."
+        elif data == "edit_support_config":
+            field = "support_link"
+            prompt = "Send the new support link."
+        elif data == "edit_updates_config":
+            field = "updates_link"
+            prompt = "Send the new updates link."
+        elif data == "edit_assistant_config":
+            field = "assistant_session"
+            prompt = "Send the new assistant session string."
+        elif data.startswith("toggle_flag"):
+            flag = data.split()[1]
+            settings[flag] = not settings.get(flag, True if flag != "maintenance_mode" else False)
+            await db.json_db._save()
+            await query.answer(f"Toggled {flag.replace('_', ' ')}!")
+            # Update the config message
+            from NarzoxBots.plugins.owner_settings import bot_config
+            return await bot_config(client, query.message)
+        else:
+            return await query.answer("Unknown action.")
+
+        await query.answer()
+        msg = await query.message.reply_text(prompt)
+
+        try:
+            # Note: listen requires a compatible client implementation or pyromod
+            response = await client.listen(chat_id=query.message.chat.id, user_id=query.from_user.id, timeout=60)
+            if response and response.text:
+                db.json_db.data["clone_settings"][clone_id][field] = response.text
+                await db.json_db._save()
+                await response.reply_text(f"Successfully updated {field.replace('_', ' ')}!")
+                await msg.delete()
+        except asyncio.TimeoutError:
+            await msg.edit_text("Timeout. Please try again.")
+    except Exception as e:
+        logger.error(f"Error in _config_callbacks: {e}")
