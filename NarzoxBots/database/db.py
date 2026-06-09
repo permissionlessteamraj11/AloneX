@@ -212,6 +212,26 @@ class Database:
             json_db.data["chats"][str(chat_id)]["lang"] = lang
             await json_db._save()
 
+    async def get_feature_flag(self, flag_name: str, clone_id: str = None) -> bool:
+        if clone_id:
+            settings = json_db.data["clone_settings"].get(clone_id)
+            if settings:
+                return settings.get(flag_name, True)
+
+        # Fallback to global settings
+        global_settings = json_db.data["global_settings"].get("1")
+        return global_settings.get(flag_name, True) if global_settings else True
+
+    async def set_feature_flag(self, flag_name: str, value: bool, clone_id: str = None):
+        if clone_id:
+            if clone_id in json_db.data["clone_settings"]:
+                json_db.data["clone_settings"][clone_id][flag_name] = value
+                await json_db._save()
+        else:
+            if "1" in json_db.data["global_settings"]:
+                json_db.data["global_settings"]["1"][flag_name] = value
+                await json_db._save()
+
     async def get_play_mode(self, chat_id: int):
         chat = json_db.data["chats"].get(str(chat_id))
         return chat.get("admin_only", False) if chat else False

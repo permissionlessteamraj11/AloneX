@@ -67,6 +67,18 @@ async def grant_premium(user_id: int = Body(...), days: int = Body(0), admin: st
         await json_db._save()
     return {"status": "success"}
 
+@app.get("/api/settings")
+async def get_global_settings(admin: str = Depends(get_current_admin)):
+    return json_db.data["global_settings"].get("1", {})
+
+@app.post("/api/settings/toggle")
+async def toggle_global_setting(flag: str = Body(...), value: bool = Body(...), admin: str = Depends(get_current_admin)):
+    if "1" in json_db.data["global_settings"]:
+        json_db.data["global_settings"]["1"][flag] = value
+        await json_db._save()
+        return {"status": "success", "flag": flag, "new_value": value}
+    raise HTTPException(status_code=404, detail="Settings not found")
+
 @app.post("/api/broadcast")
 async def global_broadcast(
     message: str = Body(...),

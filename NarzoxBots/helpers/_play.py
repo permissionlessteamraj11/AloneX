@@ -36,14 +36,14 @@ def checkUB(play):
         url = utils.get_url(m)
         m3u8 = url and not yt.valid(url)
 
+        from NarzoxBots.helpers._permissions import permission
+
+        # Check if the feature is globally disabled or specifically for this chat
+        # (Feature flag check will be added in later steps)
+
         play_mode = await db.get_play_mode(chat_id)
         if play_mode or force:
-            adminlist = await db.get_admins(chat_id)
-            if (
-                m.from_user.id not in adminlist
-                and not await db.is_auth(chat_id, m.from_user.id)
-                and not m.from_user.id in app.sudoers
-            ):
+            if not await permission.check_permission(chat_id, m.from_user.id, level="auth"):
                 return await m.reply_text(m.lang["play_admin"])
 
         if chat_id not in db.active_calls:

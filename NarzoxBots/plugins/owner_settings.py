@@ -3,40 +3,6 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from NarzoxBots import app
 from NarzoxBots.database.db import json_db
 
-@Client.on_message(filters.command("settings") & filters.private)
-async def settings_cmd(client: Client, message: Message):
-    is_clone = client.me.id != app.me.id
-
-    if is_clone:
-        target_clone_id = None
-        for cid, cdata in json_db.data["clones"].items():
-            if cdata.get("bot_username") == client.me.username:
-                target_clone_id = cid
-                break
-
-        if not target_clone_id:
-            return
-
-        clone_data = json_db.data["clones"][target_clone_id]
-        if clone_data.get("owner_id") != message.from_user.id:
-            return
-
-        # Show settings menu for clone
-        text = (
-            f"Settings for @{client.me.username}\n\n"
-            "Use commands to edit:\n"
-            "/editwelcome - Change welcome text\n"
-            "/editbuttons - Change buttons\n"
-            "/setbio - Set assistant bio\n"
-            "/setstart - Set start message\n"
-            "/setfallback - Set fallback message\n"
-            "/setsupport - Set support link\n"
-            "/setfooter - Set custom footer\n"
-            "/clonestats - View clone stats"
-        )
-        await message.reply_text(text)
-    else:
-        await message.reply_text("Main bot settings are managed via the Supreme Panel.")
 
 async def get_clone_and_settings(client_username, user_id):
     target_clone_id = None
@@ -143,43 +109,3 @@ async def clone_stats(client: Client, message: Message):
     else:
         await message.reply_text("Unauthorized.")
 
-@Client.on_message(filters.command("start") & filters.private)
-async def start_handler(client: Client, message: Message):
-    is_clone = client.me.id != app.me.id
-
-    if not is_clone:
-        return await message.reply_text("Welcome to the Supreme Music Bot Platform!")
-
-    target_clone_id = None
-    for cid, cdata in json_db.data["clones"].items():
-        if cdata.get("bot_username") == client.me.username:
-            target_clone_id = cid
-            break
-
-    if target_clone_id:
-        clone_data = json_db.data["clones"][target_clone_id]
-        settings = json_db.data["clone_settings"].get(target_clone_id)
-
-        welcome_text = "Welcome {first_name}!"
-        if settings:
-            welcome_text = settings.get("start_message") or settings.get("welcome_text") or welcome_text
-
-        # Variable substitution
-        welcome_text = welcome_text.format(
-            first_name=message.from_user.first_name,
-            username=message.from_user.username or "N/A",
-            user_id=message.from_user.id,
-            bot_name=client.me.first_name
-        )
-
-        # Attribution
-        attribution = f"\n\n---\nPowered by Supreme Platform\nManaged by Owner ID: {clone_data.get('owner_id')}"
-
-        keyboard = None
-        if settings and settings.get("inline_buttons"):
-            btn_list = []
-            for btn in settings["inline_buttons"]:
-                btn_list.append([InlineKeyboardButton(btn["text"], url=btn["url"])])
-            keyboard = InlineKeyboardMarkup(btn_list)
-
-        await message.reply_text(welcome_text + attribution, reply_markup=keyboard)
