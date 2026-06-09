@@ -23,6 +23,14 @@ async def _help(client: Client, m: types.Message):
 @Client.on_message(filters.command(["start"]))
 @lang.language()
 async def start(client: Client, message: types.Message):
+    # Ensure only the targeted bot responds in groups
+    if message.chat.type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
+        # If the command has a username suffix, Pyrogram handles it.
+        # If it's a plain /start, only the main bot should respond by default,
+        # or we should check if the clone is intended.
+        if "@" in message.text.split()[0] and not message.text.split()[0].endswith(client.me.username):
+            return
+
     is_clone = client.me.id != app.id
     clone_id = None
     if is_clone:
