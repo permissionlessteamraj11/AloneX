@@ -36,6 +36,17 @@ async def play_hndlr(
     url: str = None,
 ) -> None:
     try:
+        is_clone = client.me.id != app.id
+        clone_id = None
+        if is_clone:
+            for cid, cdata in db.json_db.data["clones"].items():
+                if cdata.get("bot_username") == client.me.username:
+                    clone_id = cid
+                    break
+
+        if not await db.get_feature_flag("music_enabled", clone_id):
+            return # Silently ignore or send maintenance message
+
         sent = await m.reply_text(m.lang["play_searching"])
         file = None
         mention = m.from_user.mention
@@ -70,6 +81,11 @@ async def play_hndlr(
         elif len(m.command) >= 2:
             query = " ".join(m.command[1:])
             file = await yt.search(query, sent.id, video=video)
+            if not file:
+                # Fallback search if the first one fails
+                logger.warning(f"Initial search failed for: {query}. Trying fallback...")
+                file = await yt.search(f"{query} official audio", sent.id, video=video)
+
             if not file:
                 return await sent.edit_text(
                     m.lang["play_not_found"].format(config.SUPPORT_CHAT)

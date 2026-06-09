@@ -25,15 +25,12 @@ def admin_check(func):
             else update.message.chat.id
         )
         user_id = update.from_user.id
-        admins = await db.get_admins(chat_id)
+        from NarzoxBots.helpers._permissions import permission
 
-        if user_id in app.sudoers:
+        if await permission.check_permission(chat_id, user_id, level="admin"):
             return await func(_, update, *args, **kwargs)
 
-        if user_id not in admins:
-            return await reply(update.lang["user_no_perms"])
-
-        return await func(_, update, *args, **kwargs)
+        return await reply(update.lang["user_no_perms"])
 
     return wrapper
 
@@ -47,15 +44,9 @@ def can_manage_vc(func):
             else update.message.chat.id
         )
         user_id = update.from_user.id
+        from NarzoxBots.helpers._permissions import permission
 
-        if user_id in app.sudoers:
-            return await func(_, update, *args, **kwargs)
-
-        if await db.is_auth(chat_id, user_id):
-            return await func(_, update, *args, **kwargs)
-
-        admins = await db.get_admins(chat_id)
-        if user_id in admins:
+        if await permission.check_permission(chat_id, user_id, level="auth"):
             return await func(_, update, *args, **kwargs)
 
         if isinstance(update, types.Message):

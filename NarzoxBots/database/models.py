@@ -1,7 +1,7 @@
 import datetime
 
 class User:
-    def __init__(self, id, username=None, first_name=None, is_premium=False, premium_expiry=None, is_suspended=False, is_sudo=False, created_at=None):
+    def __init__(self, id, username=None, first_name=None, is_premium=False, premium_expiry=None, is_suspended=False, is_sudo=False, welcomed=False, created_at=None):
         self.id = id
         self.username = username
         self.first_name = first_name
@@ -9,6 +9,7 @@ class User:
         self.premium_expiry = premium_expiry
         self.is_suspended = is_suspended
         self.is_sudo = is_sudo
+        self.welcomed = welcomed
         self.created_at = created_at or datetime.datetime.now(datetime.UTC)
 
     def to_dict(self):
@@ -20,6 +21,7 @@ class User:
             "premium_expiry": self.premium_expiry.isoformat() if isinstance(self.premium_expiry, datetime.datetime) else self.premium_expiry,
             "is_suspended": self.is_suspended,
             "is_sudo": self.is_sudo,
+            "welcomed": self.welcomed,
             "created_at": self.created_at.isoformat() if isinstance(self.created_at, datetime.datetime) else self.created_at,
         }
 
@@ -86,7 +88,7 @@ class Clone:
         return cls(**data)
 
 class CloneSettings:
-    def __init__(self, id=None, clone_id=None, welcome_text=None, welcome_media=None, inline_buttons=None, assistant_name=None, assistant_bio=None, assistant_session=None, start_message=None, fallback_message=None, support_link=None, updates_link=None, owner_link=None, group_link=None, clone_link=None, source_link=None, theme=None, thumbnail=None, custom_footer=None):
+    def __init__(self, id=None, clone_id=None, welcome_text=None, welcome_media=None, inline_buttons=None, assistant_name=None, assistant_bio=None, assistant_session=None, start_message=None, fallback_message=None, support_link=None, updates_link=None, owner_link=None, group_link=None, clone_link=None, source_link=None, theme=None, thumbnail=None, custom_footer=None, music_enabled=True, welcome_enabled=True, maintenance_mode=False):
         self.id = id
         self.clone_id = clone_id
         self.welcome_text = welcome_text
@@ -106,6 +108,9 @@ class CloneSettings:
         self.theme = theme
         self.thumbnail = thumbnail
         self.custom_footer = custom_footer
+        self.music_enabled = music_enabled
+        self.welcome_enabled = welcome_enabled
+        self.maintenance_mode = maintenance_mode
 
     def to_dict(self):
         return self.__dict__
@@ -115,13 +120,16 @@ class CloneSettings:
         return cls(**data)
 
 class GlobalSettings:
-    def __init__(self, id=1, welcome_banner=None, help_banner=None, support_link="https://t.me/zolvid", updates_link="https://t.me/zolvid", owner_link="https://t.me/zolvid"):
+    def __init__(self, id=1, welcome_banner=None, help_banner=None, support_link="https://t.me/zolvid", updates_link="https://t.me/zolvid", owner_link="https://t.me/zolvid", music_enabled=True, welcome_enabled=True, maintenance_mode=False):
         self.id = id
         self.welcome_banner = welcome_banner
         self.help_banner = help_banner
         self.support_link = support_link
         self.updates_link = updates_link
         self.owner_link = owner_link
+        self.music_enabled = music_enabled
+        self.welcome_enabled = welcome_enabled
+        self.maintenance_mode = maintenance_mode
 
     def to_dict(self):
         return self.__dict__

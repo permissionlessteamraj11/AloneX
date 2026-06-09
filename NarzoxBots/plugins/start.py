@@ -23,6 +23,18 @@ async def _help(client: Client, m: types.Message):
 @Client.on_message(filters.command(["start"]))
 @lang.language()
 async def start(client: Client, message: types.Message):
+    is_clone = client.me.id != app.id
+    clone_id = None
+    if is_clone:
+        for cid, cdata in db.json_db.data["clones"].items():
+            if cdata.get("bot_username") == client.me.username:
+                clone_id = cid
+                break
+
+    if not await db.get_feature_flag("welcome_enabled", clone_id):
+        if not await db.get_feature_flag("maintenance_mode", clone_id):
+             return # Silently ignore if disabled
+
     if message.from_user.id in app.bl_users and message.from_user.id not in db.notified:
         return await message.reply_text(message.lang["bl_user_notify"])
 
@@ -79,6 +91,12 @@ async def start(client: Client, message: types.Message):
         clone=clone_link
     )
 
+    # Check if already welcomed (once per user flow)
+    user_data = json_db.data["users"].get(str(message.from_user.id))
+    if private and user_data and user_data.get("welcomed"):
+        # Still send the message but maybe keep it logged or track sessions
+        pass
+
     if start_img:
         await message.reply_photo(
             photo=start_img,
@@ -94,10 +112,15 @@ async def start(client: Client, message: types.Message):
         )
 
     if private:
-        if await db.is_user(message.from_user.id):
+        if user_data:
+            if not user_data.get("welcomed"):
+                json_db.data["users"][str(message.from_user.id)]["welcomed"] = True
+                await json_db._save()
             return
         await utils.send_log(message)
         await db.add_user(message.from_user.id)
+        json_db.data["users"][str(message.from_user.id)]["welcomed"] = True
+        await json_db._save()
     else:
         if await db.is_chat(message.chat.id):
             return
