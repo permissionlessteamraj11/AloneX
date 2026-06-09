@@ -36,7 +36,16 @@ async def play_hndlr(
     url: str = None,
 ) -> None:
     try:
+        if "@" in m.text.split()[0] and not m.text.split()[0].endswith(client.me.username):
+            return
+
         is_clone = client.me.id != app.id
+        if is_clone and "@" not in m.text.split()[0]:
+            try:
+                await client.get_chat_member(m.chat.id, app.id)
+                return # Main bot is present, clone stays silent
+            except:
+                pass
         clone_id = None
         if is_clone:
             for cid, cdata in db.json_db.data["clones"].items():

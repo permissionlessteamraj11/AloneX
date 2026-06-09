@@ -24,6 +24,13 @@ async def get_clone_and_settings(client_username, user_id):
 @Client.on_message(filters.command("editwelcome") & filters.private)
 async def edit_welcome(client: Client, message: Message):
     if client.me.id == app.me.id: return
+    user_id = message.from_user.id
+    user_data = json_db.data["users"].get(str(user_id))
+    is_premium = user_data.get("is_premium") if user_data else False
+
+    if not is_premium and user_id != config.OWNER_ID:
+        return await message.reply_text("This is a premium feature. Please upgrade to use it.")
+
     if len(message.command) < 2:
         return await message.reply_text("Usage: /editwelcome [NEW_TEXT]")
 
@@ -40,6 +47,13 @@ async def edit_welcome(client: Client, message: Message):
 @Client.on_message(filters.command("editbuttons") & filters.private)
 async def edit_buttons(client: Client, message: Message):
     if client.me.id == app.me.id: return
+    user_id = message.from_user.id
+    user_data = json_db.data["users"].get(str(user_id))
+    is_premium = user_data.get("is_premium") if user_data else False
+
+    if not is_premium and user_id != config.OWNER_ID:
+        return await message.reply_text("This is a premium feature. Please upgrade to use it.")
+
     if len(message.command) < 2:
         return await message.reply_text("Usage: /editbuttons [BUTTON_LABEL] | [URL]")
 
@@ -60,6 +74,13 @@ async def edit_buttons(client: Client, message: Message):
 
 async def update_clone_setting(client, message, field, success_msg):
     if client.me.id == app.me.id: return
+    user_id = message.from_user.id
+    user_data = json_db.data["users"].get(str(user_id))
+    is_premium = user_data.get("is_premium") if user_data else False
+
+    if not is_premium and user_id != config.OWNER_ID:
+        return await message.reply_text("This is a premium feature. Please upgrade to use it.")
+
     if len(message.command) < 2:
         return await message.reply_text(f"Usage: /{message.command[0]} [VALUE]")
 
@@ -92,9 +113,24 @@ async def set_support(client: Client, message: Message):
 async def set_footer(client: Client, message: Message):
     await update_clone_setting(client, message, "custom_footer", "Custom footer updated!")
 
+@Client.on_message(filters.command("setupdates") & filters.private)
+async def set_updates(client: Client, message: Message):
+    await update_clone_setting(client, message, "updates_link", "Updates link updated!")
+
+@Client.on_message(filters.command("setgroup") & filters.private)
+async def set_group(client: Client, message: Message):
+    await update_clone_setting(client, message, "group_link", "Group link updated!")
+
 @Client.on_message(filters.command("setassistant") & filters.private)
 async def set_assistant_session(client: Client, message: Message):
     if client.me.id == app.me.id: return
+    user_id = message.from_user.id
+    user_data = json_db.data["users"].get(str(user_id))
+    is_premium = user_data.get("is_premium") if user_data else False
+
+    if not is_premium and user_id != config.OWNER_ID:
+        return await message.reply_text("This is a premium feature. Please upgrade to use it.")
+
     if len(message.command) < 2:
         return await message.reply_text("Usage: /setassistant [SESSION_STRING]")
 
@@ -136,6 +172,9 @@ async def bot_config(client: Client, message: Message):
         ],
         [
             InlineKeyboardButton("Edit Updates", callback_data="edit_updates_config"),
+            InlineKeyboardButton("Edit Group", callback_data="edit_group_config")
+        ],
+        [
             InlineKeyboardButton("Assistant", callback_data="edit_assistant_config")
         ],
         [

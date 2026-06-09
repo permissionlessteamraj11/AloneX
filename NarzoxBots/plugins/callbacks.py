@@ -225,6 +225,9 @@ async def _config_callbacks(client: Client, query: types.CallbackQuery):
         elif data == "edit_updates_config":
             field = "updates_link"
             prompt = "Send the new updates link."
+        elif data == "edit_group_config":
+            field = "group_link"
+            prompt = "Send the new group link."
         elif data == "edit_assistant_config":
             field = "assistant_session"
             prompt = "Send the new assistant session string."

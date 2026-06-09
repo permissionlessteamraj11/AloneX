@@ -43,7 +43,7 @@ async def clone_bot(client: Client, message: Message):
         json_db.data["clones"][clone_id] = new_clone.to_dict()
 
         # Initialize default settings
-        settings = CloneSettings(id=int(clone_id), clone_id=int(clone_id), welcome_text="Welcome to my music bot!")
+        settings = CloneSettings(id=int(clone_id), clone_id=int(clone_id), welcome_text="Welcome to Narzox Music!")
         json_db.data["clone_settings"][clone_id] = settings.to_dict()
 
         await json_db._save()

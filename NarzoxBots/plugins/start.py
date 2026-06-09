@@ -25,11 +25,15 @@ async def _help(client: Client, m: types.Message):
 async def start(client: Client, message: types.Message):
     # Ensure only the targeted bot responds in groups
     if message.chat.type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
-        # If the command has a username suffix, Pyrogram handles it.
-        # If it's a plain /start, only the main bot should respond by default,
-        # or we should check if the clone is intended.
         if "@" in message.text.split()[0] and not message.text.split()[0].endswith(client.me.username):
             return
+
+        if client.me.id != app.id and "@" not in message.text.split()[0]:
+            try:
+                await client.get_chat_member(message.chat.id, app.id)
+                return # Main bot present
+            except:
+                pass
 
     is_clone = client.me.id != app.id
     clone_id = None
@@ -57,6 +61,7 @@ async def start(client: Client, message: types.Message):
     start_img = config.START_IMG
     support_link = config.SUPPORT_CHAT
     updates_link = config.SUPPORT_CHANNEL
+    group_link = None
     owner_link = "https://t.me/zolvid"
     clone_link = f"https://t.me/{app.username}"
 
@@ -73,6 +78,7 @@ async def start(client: Client, message: types.Message):
                 start_img = settings.get("welcome_media") or start_img
                 support_link = settings.get("support_link") or support_link
                 updates_link = settings.get("updates_link") or updates_link
+                group_link = settings.get("group_link")
                 owner_link = settings.get("owner_link") or owner_link
                 clone_link = settings.get("clone_link") or clone_link
     else:
@@ -96,7 +102,8 @@ async def start(client: Client, message: types.Message):
         support=support_link,
         updates=updates_link,
         owner=owner_link,
-        clone=clone_link
+        clone=clone_link,
+        group=group_link
     )
 
     # Check if already welcomed (once per user flow)
