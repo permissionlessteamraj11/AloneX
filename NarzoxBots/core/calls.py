@@ -5,6 +5,7 @@
 
 from ntgcalls import (ConnectionNotFound, TelegramServerError,
                       RTMPStreamingUnsupported)
+from pyrogram import Client
 from pyrogram.errors import MessageIdInvalid
 from pyrogram.types import InputMediaPhoto, Message
 from pytgcalls import PyTgCalls, exceptions, types
@@ -29,31 +30,31 @@ class TgCall:
         """
         Registers a custom assistant for a specific bot (clone).
         """
-        if assistant.id in self._assistant_map:
-            self._bot_to_assistant[bot_id] = assistant.id
+        if assistant.me.id in self._assistant_map:
+            self._bot_to_assistant[bot_id] = assistant.me.id
             return
 
         client = PyTgCalls(assistant, cache_duration=100)
         await client.start()
         self.clients.append(client)
-        self._assistant_map[assistant.id] = client
-        self._bot_to_assistant[bot_id] = assistant.id
+        self._assistant_map[assistant.me.id] = client
+        self._bot_to_assistant[bot_id] = assistant.me.id
         await self.decorators(client)
-        logger.info(f"Registered custom assistant {assistant.id} for bot {bot_id}")
+        logger.info(f"Registered custom assistant {assistant.me.id} for bot {bot_id}")
 
     async def unregister_assistant(self, bot_id: int):
         """
         Unregisters a custom assistant.
         """
         assistant_id = self._bot_to_assistant.pop(bot_id, None)
-        if assistant_id and assistant_id not in [ub.id for ub in userbot.clients]:
+        if assistant_id and assistant_id not in [ub.me.id for ub in userbot.clients]:
             # If it's not a main assistant, we might want to stop it if no other bot uses it
             # For now, let's keep it simple and just remove the mapping
             pass
 
     async def pause(self, chat_id: int, bot_id: int = None) -> bool:
         assistant = await db.get_assistant(chat_id, bot_id=bot_id)
-        client = self.get_call_client(assistant.id)
+        client = self.get_call_client(assistant.me.id)
         if not client:
             return False
         await db.playing(chat_id, paused=True)
@@ -61,7 +62,7 @@ class TgCall:
 
     async def resume(self, chat_id: int, bot_id: int = None) -> bool:
         assistant = await db.get_assistant(chat_id, bot_id=bot_id)
-        client = self.get_call_client(assistant.id)
+        client = self.get_call_client(assistant.me.id)
         if not client:
             return False
         await db.playing(chat_id, paused=False)
@@ -69,7 +70,7 @@ class TgCall:
 
     async def stop(self, chat_id: int, bot_id: int = None) -> None:
         assistant = await db.get_assistant(chat_id, bot_id=bot_id)
-        client = self.get_call_client(assistant.id)
+        client = self.get_call_client(assistant.me.id)
         try:
             queue.clear(chat_id)
             await db.remove_call(chat_id)
@@ -92,7 +93,7 @@ class TgCall:
         bot_id: int = None,
     ) -> None:
         assistant = await db.get_assistant(chat_id, bot_id=bot_id)
-        client = self.get_call_client(assistant.id)
+        client = self.get_call_client(assistant.me.id)
         if not client:
             return
 
@@ -267,7 +268,7 @@ class TgCall:
             client = PyTgCalls(ub, cache_duration=100)
             await client.start()
             self.clients.append(client)
-            self._assistant_map[ub.id] = client
+            self._assistant_map[ub.me.id] = client
             await self.decorators(client)
         logger.info("PyTgCalls client(s) started.")
 

@@ -50,22 +50,22 @@ def checkUB(play):
             client = await db.get_client(chat_id)
             try:
                 # Optimized: Try to get member status without full peer resolution if possible
-                member = await bot_client.get_chat_member(chat_id, client.id)
+                member = await bot_client.get_chat_member(chat_id, client.me.id)
                 if member.status in [
                     enums.ChatMemberStatus.BANNED,
                     enums.ChatMemberStatus.RESTRICTED,
                 ]:
                     try:
                         await bot_client.unban_chat_member(
-                            chat_id=chat_id, user_id=client.id
+                            chat_id=chat_id, user_id=client.me.id
                         )
                     except:
                         return await m.reply_text(
                             m.lang["play_banned"].format(
                                 bot_client.me.first_name,
-                                client.id,
-                                client.mention,
-                                f"@{client.username}" if client.username else None,
+                                client.me.id,
+                                client.me.mention,
+                                f"@{client.me.username}" if client.me.username else None,
                             )
                         )
             except (errors.UserNotParticipant, errors.exceptions.bad_request_400.UserNotParticipant):
@@ -96,7 +96,7 @@ def checkUB(play):
                 except errors.InviteRequestSent:
                     await asyncio.sleep(2)
                     try:
-                        await client.approve_chat_join_request(chat_id, client.id)
+                        await client.approve_chat_join_request(chat_id, client.me.id)
                     except errors.HideRequesterMissing:
                         pass
                     except Exception as ex:

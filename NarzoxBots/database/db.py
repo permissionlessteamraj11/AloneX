@@ -146,6 +146,7 @@ def async_session():
 
 class Database:
     def __init__(self):
+        self.json_db = json_db
         self.active_calls = {}
         self.notified = set()
         self.bl_users = set()
