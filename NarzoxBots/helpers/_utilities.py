@@ -90,12 +90,14 @@ class Utilities:
         m: types.Message,
         title: str,
         duration: str,
+        bot_client = None
     ) -> None:
-        if not app.logger or m.chat.id == app.logger:
+        client = bot_client or app
+        if not client.logger or m.chat.id == client.logger:
             return
         try:
             _text = m.lang["play_log"].format(
-                app.name,
+                client.me.first_name,
                 m.chat.id,
                 m.chat.title,
                 m.from_user.id,
@@ -104,7 +106,7 @@ class Utilities:
                 title,
                 duration,
             )
-            await app.send_message(chat_id=app.logger, text=_text)
+            await client.send_message(chat_id=client.logger, text=_text)
         except Exception as e:
             from NarzoxBots import logger
             logger.error(f"Error in play_log: {e}")

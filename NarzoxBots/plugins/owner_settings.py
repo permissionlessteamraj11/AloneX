@@ -1,6 +1,6 @@
 from pyrogram import filters, Client
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-from NarzoxBots import app
+from NarzoxBots import app, config
 from NarzoxBots.database.db import json_db
 
 
@@ -21,21 +21,28 @@ async def get_clone_and_settings(client_username, user_id):
     settings_data = json_db.data["clone_settings"].get(target_clone_id)
     return target_clone_id, settings_data
 
+async def has_permission(client, user_id):
+    user_data = json_db.data["users"].get(str(user_id))
+    is_premium = user_data.get("is_premium") if user_data else False
+    if is_premium or user_id == config.OWNER_ID:
+        return True
+
+    clone_id, settings = await get_clone_and_settings(client.me.username, user_id)
+    return clone_id is not None
+
 @Client.on_message(filters.command("editwelcome") & filters.private)
 async def edit_welcome(client: Client, message: Message):
     if client.me.id == app.me.id: return
     user_id = message.from_user.id
-    user_data = json_db.data["users"].get(str(user_id))
-    is_premium = user_data.get("is_premium") if user_data else False
 
-    if not is_premium and user_id != config.OWNER_ID:
+    if not await has_permission(client, user_id):
         return await message.reply_text("This is a premium feature. Please upgrade to use it.")
 
     if len(message.command) < 2:
         return await message.reply_text("Usage: /editwelcome [NEW_TEXT]")
 
     new_text = message.text.split(None, 1)[1]
-    clone_id, settings = await get_clone_and_settings(client.me.username, message.from_user.id)
+    clone_id, settings = await get_clone_and_settings(client.me.username, user_id)
 
     if settings:
         json_db.data["clone_settings"][clone_id]["welcome_text"] = new_text
@@ -48,10 +55,8 @@ async def edit_welcome(client: Client, message: Message):
 async def edit_buttons(client: Client, message: Message):
     if client.me.id == app.me.id: return
     user_id = message.from_user.id
-    user_data = json_db.data["users"].get(str(user_id))
-    is_premium = user_data.get("is_premium") if user_data else False
 
-    if not is_premium and user_id != config.OWNER_ID:
+    if not await has_permission(client, user_id):
         return await message.reply_text("This is a premium feature. Please upgrade to use it.")
 
     if len(message.command) < 2:
@@ -64,7 +69,7 @@ async def edit_buttons(client: Client, message: Message):
     except:
         return await message.reply_text("Format: Label | URL")
 
-    clone_id, settings = await get_clone_and_settings(client.me.username, message.from_user.id)
+    clone_id, settings = await get_clone_and_settings(client.me.username, user_id)
     if settings:
         json_db.data["clone_settings"][clone_id]["inline_buttons"] = [{"text": label, "url": url}]
         await json_db._save()
@@ -75,17 +80,15 @@ async def edit_buttons(client: Client, message: Message):
 async def update_clone_setting(client, message, field, success_msg):
     if client.me.id == app.me.id: return
     user_id = message.from_user.id
-    user_data = json_db.data["users"].get(str(user_id))
-    is_premium = user_data.get("is_premium") if user_data else False
 
-    if not is_premium and user_id != config.OWNER_ID:
+    if not await has_permission(client, user_id):
         return await message.reply_text("This is a premium feature. Please upgrade to use it.")
 
     if len(message.command) < 2:
         return await message.reply_text(f"Usage: /{message.command[0]} [VALUE]")
 
     value = message.text.split(None, 1)[1]
-    clone_id, settings = await get_clone_and_settings(client.me.username, message.from_user.id)
+    clone_id, settings = await get_clone_and_settings(client.me.username, user_id)
     if settings:
         json_db.data["clone_settings"][clone_id][field] = value
         await json_db._save()
@@ -125,17 +128,15 @@ async def set_group(client: Client, message: Message):
 async def set_assistant_session(client: Client, message: Message):
     if client.me.id == app.me.id: return
     user_id = message.from_user.id
-    user_data = json_db.data["users"].get(str(user_id))
-    is_premium = user_data.get("is_premium") if user_data else False
 
-    if not is_premium and user_id != config.OWNER_ID:
+    if not await has_permission(client, user_id):
         return await message.reply_text("This is a premium feature. Please upgrade to use it.")
 
     if len(message.command) < 2:
         return await message.reply_text("Usage: /setassistant [SESSION_STRING]")
 
     session = message.text.split(None, 1)[1]
-    clone_id, settings = await get_clone_and_settings(client.me.username, message.from_user.id)
+    clone_id, settings = await get_clone_and_settings(client.me.username, user_id)
     if settings:
         json_db.data["clone_settings"][clone_id]["assistant_session"] = session
         await json_db._save()
@@ -203,4 +204,3 @@ async def clone_stats(client: Client, message: Message):
         await message.reply_text(text)
     else:
         await message.reply_text("Unauthorized.")
-

@@ -5,21 +5,21 @@
 
 import asyncio
 
-from pyrogram import enums, errors, types
+from pyrogram import Client, enums, errors, types
 
 from NarzoxBots import app, config, db, logger, queue, yt
 from NarzoxBots.helpers import utils
 
 
 def checkUB(play):
-    async def wrapper(_, m: types.Message):
+    async def wrapper(bot_client: Client, m: types.Message):
         if not m.from_user:
             return await m.reply_text(m.lang["play_user_invalid"])
 
         chat_id = m.chat.id
         if m.chat.type != enums.ChatType.SUPERGROUP:
             await m.reply_text(m.lang["play_chat_invalid"])
-            return await app.leave_chat(chat_id)
+            return await bot_client.leave_chat(chat_id)
 
         if not m.reply_to_message and (
             len(m.command) < 2 or (len(m.command) == 2 and m.command[1] == "-f")
@@ -50,19 +50,19 @@ def checkUB(play):
             client = await db.get_client(chat_id)
             try:
                 # Optimized: Try to get member status without full peer resolution if possible
-                member = await app.get_chat_member(chat_id, client.id)
+                member = await bot_client.get_chat_member(chat_id, client.id)
                 if member.status in [
                     enums.ChatMemberStatus.BANNED,
                     enums.ChatMemberStatus.RESTRICTED,
                 ]:
                     try:
-                        await app.unban_chat_member(
+                        await bot_client.unban_chat_member(
                             chat_id=chat_id, user_id=client.id
                         )
                     except:
                         return await m.reply_text(
                             m.lang["play_banned"].format(
-                                app.name,
+                                bot_client.me.first_name,
                                 client.id,
                                 client.mention,
                                 f"@{client.username}" if client.username else None,
@@ -77,9 +77,9 @@ def checkUB(play):
                         pass
                 else:
                     try:
-                        invite_link = (await app.get_chat(chat_id)).invite_link
+                        invite_link = (await bot_client.get_chat(chat_id)).invite_link
                         if not invite_link:
-                            invite_link = await app.export_chat_invite_link(chat_id)
+                            invite_link = await bot_client.export_chat_invite_link(chat_id)
                     except errors.ChatAdminRequired:
                         return await m.reply_text(m.lang["admin_required"])
                     except Exception as ex:
@@ -87,7 +87,7 @@ def checkUB(play):
                             m.lang["play_invite_error"].format(type(ex).__name__)
                         )
 
-                umm = await m.reply_text(m.lang["play_invite"].format(app.name))
+                umm = await m.reply_text(m.lang["play_invite"].format(bot_client.me.first_name))
                 await asyncio.sleep(2)
                 try:
                     await client.join_chat(invite_link)
@@ -117,6 +117,6 @@ def checkUB(play):
         except:
             pass
 
-        return await play(_, m, force, m3u8, video, url)
+        return await play(bot_client, m, force, m3u8, video, url)
 
     return wrapper

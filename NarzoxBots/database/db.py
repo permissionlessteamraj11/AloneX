@@ -347,11 +347,20 @@ class Database:
     async def is_logger(self):
         return bool(config.LOGGER_ID)
 
-    async def get_assistant(self, chat_id: int):
+    async def get_assistant(self, chat_id: int, bot_id: int = None):
         from NarzoxBots import app
         from NarzoxBots.services.clones.manager import clone_manager
 
-        # If it's a clone, try to find its custom assistant
+        # If bot_id is provided, check if it's a clone and has a custom assistant
+        if bot_id:
+            for bot_token, client in clone_manager.clones.items():
+                if client.me and client.me.id == bot_id:
+                    assistant = clone_manager.assistants.get(bot_token)
+                    if assistant:
+                        return assistant
+                    break
+
+        # If it's a clone, try to find its custom assistant by checking if any clone is in the chat
         for bot_token, assistant in clone_manager.assistants.items():
             client = clone_manager.clones.get(bot_token)
             if client:
@@ -365,20 +374,19 @@ class Database:
         from NarzoxBots import userbot
         return userbot.clients[0]
 
-    async def get_client(self, chat_id: int):
+    async def get_client(self, chat_id: int, bot_id: int = None):
         # Determine if this chat is served by a clone or the main bot
         from NarzoxBots import app
         from NarzoxBots.services.clones.manager import clone_manager
 
-        # Check if any clone serves this chat by looking at its bot_token
-        # or some other identifier. Since we don't have a direct mapping
-        # of chat_id -> clone_token in the current DB, we might need a fallback.
-        # However, for timer updates, we can try to find if the chat has active call
-        # and if that call was initiated by a clone.
+        if bot_id:
+            if bot_id == app.id:
+                return app
+            for client in clone_manager.clones.values():
+                if client.me and client.me.id == bot_id:
+                    return client
 
-        # A better way is to check the last message ID serve or some cache.
-        # Given the constraints, we'll return the main app if no specific clone is found.
-        # In a real scenario, we'd have a serving_bot_id in the chats table.
+        # Check if any clone serves this chat
         for clone in clone_manager.clones.values():
             try:
                 if await clone.get_chat(chat_id):
