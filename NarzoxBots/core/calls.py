@@ -17,31 +17,58 @@ from NarzoxBots.helpers import Media, Track, buttons, thumb
 class TgCall:
     def __init__(self):
         self.clients = []
-        self._assistant_map = {}
+        self._assistant_map = {} # assistant_id: PyTgCalls
+        self._bot_to_assistant = {} # bot_id: assistant_id
 
     def get_call_client(self, assistant_id: int):
         return self._assistant_map.get(assistant_id) or (
             self.clients[0] if self.clients else None
         )
 
-    async def pause(self, chat_id: int) -> bool:
-        assistant = await db.get_assistant(chat_id)
+    async def register_assistant(self, bot_id: int, assistant: Client):
+        """
+        Registers a custom assistant for a specific bot (clone).
+        """
+        if assistant.id in self._assistant_map:
+            self._bot_to_assistant[bot_id] = assistant.id
+            return
+
+        client = PyTgCalls(assistant, cache_duration=100)
+        await client.start()
+        self.clients.append(client)
+        self._assistant_map[assistant.id] = client
+        self._bot_to_assistant[bot_id] = assistant.id
+        await self.decorators(client)
+        logger.info(f"Registered custom assistant {assistant.id} for bot {bot_id}")
+
+    async def unregister_assistant(self, bot_id: int):
+        """
+        Unregisters a custom assistant.
+        """
+        assistant_id = self._bot_to_assistant.pop(bot_id, None)
+        if assistant_id and assistant_id not in [ub.id for ub in userbot.clients]:
+            # If it's not a main assistant, we might want to stop it if no other bot uses it
+            # For now, let's keep it simple and just remove the mapping
+            pass
+
+    async def pause(self, chat_id: int, bot_id: int = None) -> bool:
+        assistant = await db.get_assistant(chat_id, bot_id=bot_id)
         client = self.get_call_client(assistant.id)
         if not client:
             return False
         await db.playing(chat_id, paused=True)
         return await client.pause(chat_id)
 
-    async def resume(self, chat_id: int) -> bool:
-        assistant = await db.get_assistant(chat_id)
+    async def resume(self, chat_id: int, bot_id: int = None) -> bool:
+        assistant = await db.get_assistant(chat_id, bot_id=bot_id)
         client = self.get_call_client(assistant.id)
         if not client:
             return False
         await db.playing(chat_id, paused=False)
         return await client.resume(chat_id)
 
-    async def stop(self, chat_id: int) -> None:
-        assistant = await db.get_assistant(chat_id)
+    async def stop(self, chat_id: int, bot_id: int = None) -> None:
+        assistant = await db.get_assistant(chat_id, bot_id=bot_id)
         client = self.get_call_client(assistant.id)
         try:
             queue.clear(chat_id)
@@ -62,8 +89,9 @@ class TgCall:
         message: Message,
         media: Media | Track,
         seek_time: int = 0,
+        bot_id: int = None,
     ) -> None:
-        assistant = await db.get_assistant(chat_id)
+        assistant = await db.get_assistant(chat_id, bot_id=bot_id)
         client = self.get_call_client(assistant.id)
         if not client:
             return
@@ -150,21 +178,25 @@ class TgCall:
             await self.stop(chat_id)
 
 
-    async def replay(self, chat_id: int) -> None:
+    async def replay(self, chat_id: int, bot_id: int = None) -> None:
         if not await db.get_call(chat_id):
             return
 
         media = queue.get_current(chat_id)
+        serving_bot = await db.get_client(chat_id, bot_id=bot_id)
         _lang = await lang.get_lang(chat_id)
-        msg = await app.send_message(chat_id=chat_id, text=_lang["play_again"])
-        await self.play_media(chat_id, msg, media)
+        msg = await serving_bot.send_message(chat_id=chat_id, text=_lang["play_again"])
+        await self.play_media(chat_id, msg, media, bot_id=bot_id)
 
 
-    async def play_next(self, chat_id: int) -> None:
+    async def play_next(self, chat_id: int, bot_id: int = None) -> None:
         media = queue.get_next(chat_id)
+        # Determine serving bot
+        serving_bot = await db.get_client(chat_id, bot_id=bot_id)
+
         try:
             if media.message_id:
-                await app.delete_messages(
+                await serving_bot.delete_messages(
                     chat_id=chat_id,
                     message_ids=media.message_id,
                     revoke=True,
@@ -174,20 +206,20 @@ class TgCall:
             pass
 
         if not media:
-            return await self.stop(chat_id)
+            return await self.stop(chat_id, bot_id=bot_id)
 
         _lang = await lang.get_lang(chat_id)
-        msg = await app.send_message(chat_id=chat_id, text=_lang["play_next"])
+        msg = await serving_bot.send_message(chat_id=chat_id, text=_lang["play_next"])
         if not media.file_path:
             media.file_path = await yt.download(media.id, video=media.video)
             if not media.file_path:
-                await self.stop(chat_id)
+                await self.stop(chat_id, bot_id=bot_id)
                 return await msg.edit_text(
                     _lang["error_no_file"].format(config.SUPPORT_CHAT)
                 )
 
         media.message_id = msg.id
-        await self.play_media(chat_id, msg, media)
+        await self.play_media(chat_id, msg, media, bot_id=bot_id)
 
 
     async def ping(self) -> float:

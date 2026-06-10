@@ -117,7 +117,7 @@ async def play_hndlr(
             )
 
         if await db.is_logger():
-            await utils.play_log(m, file.title, file.duration)
+            await utils.play_log(m, file.title, file.duration, bot_client=client)
 
         file.user = mention
         if force:
@@ -159,7 +159,7 @@ async def play_hndlr(
                     return await sent.edit_text(m.lang["play_not_found"].format(config.SUPPORT_CHAT))
 
         try:
-            await anon.play_media(chat_id=m.chat.id, message=sent, media=file)
+            await anon.play_media(chat_id=m.chat.id, message=sent, media=file, bot_id=client.me.id)
         except Exception as e:
             logger.error(f"Playback Error: {e}")
             return await sent.edit_text(f"An error occurred during playback: {e}")

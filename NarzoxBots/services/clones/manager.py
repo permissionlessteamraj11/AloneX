@@ -47,6 +47,11 @@ class CloneManager:
                 )
                 await assistant.start()
                 self.assistants[bot_token] = assistant
+
+                # Register assistant with media system
+                from NarzoxBots import anon
+                await anon.register_assistant(client.me.id, assistant)
+
                 logger.info(f"Started custom assistant for clone @{client.me.username}")
 
             logger.info(f"Started clone: @{client.me.username}")
@@ -59,6 +64,9 @@ class CloneManager:
         if bot_token in self.clones:
             client = self.clones.pop(bot_token)
             if client.is_connected:
+                # Unregister from media system
+                from NarzoxBots import anon
+                await anon.unregister_assistant(client.me.id)
                 await client.stop()
 
             if bot_token in self.assistants:
