@@ -121,6 +121,12 @@ class TgCall:
             ffmpeg_parameters=(f"-ss {seek_time} " if seek_time > 1 else "") + "-tune zerolatency -analyzeduration 0 -probesize 32",
         )
         try:
+            # Pre-play peer resolution for assistant
+            try:
+                await assistant.get_chat(chat_id)
+            except Exception as e:
+                logger.warning(f"Assistant failed to resolve chat {chat_id} before play: {e}")
+
             await client.play(
                 chat_id=chat_id,
                 stream=stream,
@@ -171,10 +177,12 @@ class TgCall:
             await message.edit_text(_lang["error_rtmp"])
         except Exception as e:
             if "PeerIdInvalid" in str(e):
-                logger.error(f"PeerIdInvalid in play_media: {e}")
-                await message.edit_text("Assistant peer cache issue. Try /play again in a moment.")
+                logger.error(f"PeerIdInvalid in play_media for chat {chat_id}: {e}")
+                await message.edit_text("Assistant peer cache issue. Please try /play again in a moment.")
+            elif "NoActiveGroupCall" in str(e):
+                await message.edit_text(_lang["error_no_call"])
             else:
-                logger.error(f"Unknown error in play_media: {e}")
+                logger.error(f"Unknown error in play_media for chat {chat_id}: {e}")
                 await message.edit_text(f"An error occurred: {type(e).__name__}")
             await self.stop(chat_id)
 

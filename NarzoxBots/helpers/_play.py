@@ -49,11 +49,17 @@ def checkUB(play):
         if chat_id not in db.active_calls:
             client = await db.get_assistant(chat_id, bot_id=bot_client.me.id)
             try:
-                # Resolve peer to avoid PeerIdInvalid
+                # Robust Peer Resolution for both bot and assistant
                 try:
-                    await bot_client.get_users(client.me.username or client.me.id)
-                except:
-                    pass
+                    # Bot client 'meets' assistant and resolves chat
+                    await bot_client.get_users(client.me.id)
+                    await bot_client.get_chat(chat_id)
+                    # Assistant client 'meets' bot and resolves chat
+                    await client.get_users(bot_client.me.id)
+                    await client.get_chat(chat_id)
+                except Exception as e:
+                    logger.warning(f"Peer resolution warning in chat {chat_id}: {e}")
+
                 # Optimized: Try to get member status without full peer resolution if possible
                 member = await bot_client.get_chat_member(chat_id, client.me.id)
                 if member.status in [
