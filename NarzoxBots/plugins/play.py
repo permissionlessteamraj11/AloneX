@@ -161,8 +161,8 @@ async def play_hndlr(
         try:
             await anon.play_media(chat_id=m.chat.id, message=sent, media=file, bot_id=client.me.id)
         except Exception as e:
-            logger.error(f"Playback Error: {e}")
-            return await sent.edit_text(f"An error occurred during playback: {e}")
+            logger.error(f"Playback Error in play_hndlr: {e}")
+            return await sent.edit_text(m.lang["error_no_call"] if "NoActiveGroupCall" in str(e) else f"Playback failed: {type(e).__name__}")
         if not tracks:
             return
         added = playlist_to_queue(m.chat.id, tracks)

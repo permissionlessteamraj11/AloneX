@@ -82,9 +82,15 @@ def checkUB(play):
                         pass
                 else:
                     try:
-                        invite_link = (await bot_client.get_chat(chat_id)).invite_link
+                        chat_info = await bot_client.get_chat(chat_id)
+                        invite_link = chat_info.invite_link
                         if not invite_link:
-                            invite_link = await bot_client.export_chat_invite_link(chat_id)
+                            # Check if bot has permission to invite users
+                            me_member = await bot_client.get_chat_member(chat_id, "me")
+                            if me_member.privileges and me_member.privileges.can_invite_users:
+                                invite_link = await bot_client.export_chat_invite_link(chat_id)
+                            else:
+                                return await m.reply_text(m.lang["admin_required"])
                     except errors.ChatAdminRequired:
                         return await m.reply_text(m.lang["admin_required"])
                     except Exception as ex:
@@ -95,7 +101,9 @@ def checkUB(play):
                 umm = await m.reply_text(m.lang["play_invite"].format(bot_client.me.first_name))
                 await asyncio.sleep(2)
                 try:
-                    await client.join_chat(invite_link)
+                    await asyncio.wait_for(client.join_chat(invite_link), timeout=20)
+                except asyncio.TimeoutError:
+                    return await umm.edit_text("Assistant took too long to join. Please try again.")
                 except errors.UserAlreadyParticipant:
                     pass
                 except errors.InviteRequestSent:

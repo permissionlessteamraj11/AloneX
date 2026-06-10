@@ -63,20 +63,25 @@ class YouTube:
         try:
             _search = VideosSearch(query, limit=1, with_live=False)
             results = await _search.next()
-            if results and isinstance(results, dict) and results.get("result") and len(results["result"]) > 0:
-                data = results["result"][0]
-                return Track(
-                    id=data.get("id"),
-                    channel_name=data.get("channel", {}).get("name"),
-                    duration=data.get("duration"),
-                    duration_sec=utils.to_seconds(data.get("duration")),
-                    message_id=m_id,
-                    title=data.get("title")[:25],
-                    thumbnail=data.get("thumbnails", [{}])[-1].get("url").split("?")[0],
-                    url=data.get("link"),
-                    view_count=data.get("viewCount", {}).get("short"),
-                    video=video,
-                )
+            if not results or not isinstance(results, dict) or not results.get("result"):
+                return None
+
+            data = results["result"][0]
+            thumbnails = data.get("thumbnails", [{}])
+            thumb_url = thumbnails[-1].get("url", "").split("?")[0] if thumbnails else ""
+
+            return Track(
+                id=data.get("id"),
+                channel_name=data.get("channel", {}).get("name"),
+                duration=data.get("duration"),
+                duration_sec=utils.to_seconds(data.get("duration")),
+                message_id=m_id,
+                title=data.get("title", "Unknown Title")[:25],
+                thumbnail=thumb_url,
+                url=data.get("link"),
+                view_count=data.get("viewCount", {}).get("short"),
+                video=video,
+            )
         except Exception as e:
             logger.error(f"YouTube Search Error for '{query}': {e}")
         return None
@@ -121,7 +126,7 @@ class YouTube:
                     "nocheckcertificate": True,
                     "cookiefile": self.get_cookies(),
                     "skip_download": True,
-                    "extract_flat": "in_playlist",
+                    "extract_flat": False,
                     "cachedir": False,
                     "lazy_playlist": True,
                     "noplaylist": True,
