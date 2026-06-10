@@ -50,13 +50,17 @@ class Userbot(Client):
         await client.start()
         try:
             if config.LOGGER_ID:
+                # Proactively resolve log group peer to avoid PeerIdInvalid later
                 await client.get_chat(config.LOGGER_ID)
                 try:
                     await client.send_message(config.LOGGER_ID, "Assistant Started")
-                except:
-                    pass
+                except Exception as e:
+                    logger.debug(f"Assistant {num} could not send start message to log group: {e}")
         except Exception as ex:
-            logger.warning(f"Assistant {num} failed to access log group: {ex}")
+            if "PeerIdInvalid" in str(ex):
+                logger.warning(f"Assistant {num} log group ID is invalid or not yet 'seen' by this session.")
+            else:
+                logger.warning(f"Assistant {num} failed to access log group: {ex}")
 
         client.id = ub.me.id
         client.name = ub.me.first_name
