@@ -1,7 +1,6 @@
 from pyrogram import filters, Client
 from pyrogram.types import Message
-from NarzoxBots import app, config
-from NarzoxBots.database.db import json_db
+from NarzoxBots import app, config, db
 from NarzoxBots.services.broadcast.service import BroadcastService
 import asyncio
 
@@ -15,7 +14,8 @@ async def owner_broadcast_handler(client: Client, message: Message):
 
     user_id = message.from_user.id
     target_clone = None
-    for cid, cdata in json_db.data["clones"].items():
+    clones = await db.get_clones()
+    for cid, cdata in clones.items():
         if cdata.get("bot_username") == client.me.username:
             target_clone = cdata
             break
@@ -24,7 +24,7 @@ async def owner_broadcast_handler(client: Client, message: Message):
         return await message.reply_text("You don't own this bot instance.")
 
     # For simplicity, we broadcast to all known users in the DB
-    user_ids = [int(uid) for uid in json_db.data["users"].keys()]
+    user_ids = await db.get_all_users()
 
     await message.reply_text(f"Starting broadcast to {len(user_ids)} users...")
     service = BroadcastService(client)
@@ -37,7 +37,7 @@ async def global_broadcast_handler(client: Client, message: Message):
         return await message.reply_text("Reply to a message to global broadcast.")
 
     from NarzoxBots.services.clones.manager import clone_manager
-    user_ids = [int(uid) for uid in json_db.data["users"].keys()]
+    user_ids = await db.get_all_users()
 
     if not user_ids:
         return await message.reply_text("No users found in database.")

@@ -1,6 +1,5 @@
 import asyncio
-from NarzoxBots import app, logger
-from NarzoxBots.database.db import json_db
+from NarzoxBots import app, logger, db
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated
 
 class BroadcastService:
@@ -29,28 +28,31 @@ class BroadcastService:
             except Exception:
                 failed += 1
 
-        if broadcast_id and str(broadcast_id) in json_db.data["broadcasts"]:
-            json_db.data["broadcasts"][str(broadcast_id)].update({
-                "sent_count": sent,
-                "failed_count": failed,
-                "blocked_count": blocked,
-                "status": "completed"
+        if broadcast_id:
+            await db.db.broadcasts.update_one({"_id": broadcast_id}, {
+                "$set": {
+                    "sent_count": sent,
+                    "failed_count": failed,
+                    "blocked_count": blocked,
+                    "status": "completed"
+                }
             })
-            await json_db._save()
 
 async def run_global_broadcast(message: "pyrogram.types.Message", admin_id: int):
-    broadcast_id = str(len(json_db.data["broadcasts"]) + 1)
-    json_db.data["broadcasts"][broadcast_id] = {
-        "id": int(broadcast_id),
+    # This part is simplified since we don't have a full broadcast tracking in models yet
+    # But we use MongoDB directly
+    count = await db.db.broadcasts.count_documents({})
+    broadcast_id = count + 1
+    await db.db.broadcasts.insert_one({
+        "_id": broadcast_id,
         "sender_id": admin_id,
         "message_data": {"text": message.text or message.caption},
         "status": "processing",
         "created_at": None # Optional
-    }
-    await json_db._save()
+    })
 
     # Get all users
-    user_ids = [int(uid) for uid in json_db.data["users"].keys()]
+    user_ids = await db.get_all_users()
 
     service = BroadcastService(app)
-    asyncio.create_task(service.broadcast_to_users(int(broadcast_id), user_ids, message))
+    asyncio.create_task(service.broadcast_to_users(broadcast_id, user_ids, message))

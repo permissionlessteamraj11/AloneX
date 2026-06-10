@@ -39,17 +39,20 @@ class Bot(pyrogram.Client):
 
         try:
             if self.logger:
-                await self.get_chat(self.logger)
                 try:
-                    await self.send_message(self.logger, "Bot Started")
-                except:
-                    pass
-                try:
-                    get = await self.get_chat_member(self.logger, self.id)
-                    if get.status != pyrogram.enums.ChatMemberStatus.ADMINISTRATOR:
-                        logger.warning("Please promote the bot as an admin in logger group.")
-                except:
-                    pass
+                    await self.get_chat(self.logger)
+                    try:
+                        await self.send_message(self.logger, "Bot Started")
+                    except:
+                        pass
+                    try:
+                        get = await self.get_chat_member(self.logger, self.id)
+                        if get.status != pyrogram.enums.ChatMemberStatus.ADMINISTRATOR:
+                            logger.warning("Please promote the bot as an admin in logger group.")
+                    except:
+                        pass
+                except (pyrogram.errors.PeerIdInvalid, ValueError):
+                    logger.info(f"Bot could not resolve log group {self.logger} - usually means it's not a member.")
         except Exception as ex:
             logger.warning(f"Bot has failed to access the log group: {self.logger}\nReason: {ex}")
         logger.info(f"Bot started as @{self.username}")

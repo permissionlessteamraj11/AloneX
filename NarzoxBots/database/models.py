@@ -97,7 +97,8 @@ class CloneSettings:
     def __init__(self, id: int, clone_id: int, welcome_text: str = "Welcome to Narzox Music!",
                  welcome_media: str = None, music_enabled: bool = True,
                  maintenance_mode: bool = False, start_message: str = None,
-                 support_link: str = None, updates_link: str = None):
+                 support_link: str = None, updates_link: str = None,
+                 group_link: str = None, owner_link: str = None, clone_link: str = None):
         self.id = id
         self.clone_id = clone_id
         self.welcome_text = welcome_text
@@ -107,6 +108,9 @@ class CloneSettings:
         self.start_message = start_message
         self.support_link = support_link
         self.updates_link = updates_link
+        self.group_link = group_link
+        self.owner_link = owner_link
+        self.clone_link = clone_link
 
     def to_dict(self):
         data = self.__dict__.copy()
@@ -121,11 +125,17 @@ class CloneSettings:
 
 class GlobalSettings:
     def __init__(self, id: int = 1, music_enabled: bool = True,
-                 maintenance_mode: bool = False, broadcast_count: int = 0):
+                 maintenance_mode: bool = False, broadcast_count: int = 0,
+                 welcome_banner: str = None, support_link: str = None,
+                 updates_link: str = None, owner_link: str = None):
         self.id = id
         self.music_enabled = music_enabled
         self.maintenance_mode = maintenance_mode
         self.broadcast_count = broadcast_count
+        self.welcome_banner = welcome_banner
+        self.support_link = support_link
+        self.updates_link = updates_link
+        self.owner_link = owner_link
 
     def to_dict(self):
         data = self.__dict__.copy()

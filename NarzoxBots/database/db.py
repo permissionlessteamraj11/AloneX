@@ -100,6 +100,52 @@ class Database:
         data = await self.db.global_settings.find_one({"_id": 1})
         return data.get(flag_name, True) if data else True
 
+    async def get_settings(self, clone_id: str = None):
+        if clone_id:
+            data = await self.db.clone_settings.find_one({"_id": int(clone_id)})
+            return CloneSettings.from_dict(data) if data else None
+
+        data = await self.db.global_settings.find_one({"_id": 1})
+        return GlobalSettings.from_dict(data) if data else None
+
+    async def get_clones(self):
+        cursor = self.db.clones.find({})
+        clones = {}
+        async for clone in cursor:
+            clones[str(clone["_id"])] = clone
+        return clones
+
+    async def get_all_users(self):
+        cursor = self.db.users.find({})
+        users = []
+        async for user in cursor:
+            users.append(user["_id"])
+        return users
+
+    async def get_all_chats(self):
+        cursor = self.db.chats.find({})
+        chats = []
+        async for chat in cursor:
+            chats.append(chat["_id"])
+        return chats
+
+    async def is_chat(self, chat_id: int):
+        return await self.db.chats.find_one({"_id": chat_id}) is not None
+
+    async def get_play_mode(self, chat_id: int):
+        chat = await self.get_chat(chat_id)
+        return chat.admin_only if chat else False
+
+    async def get_cmd_delete(self, chat_id: int):
+        chat = await self.get_chat(chat_id)
+        return chat.cmd_delete if chat else False
+
+    async def update_settings(self, clone_id: str, **kwargs):
+        if clone_id:
+            await self.db.clone_settings.update_one({"_id": int(clone_id)}, {"$set": kwargs}, upsert=True)
+        else:
+            await self.db.global_settings.update_one({"_id": 1}, {"$set": kwargs}, upsert=True)
+
     # Assistant & Client resolution
     async def get_assistant(self, chat_id: int, bot_id: int = None):
         from NarzoxBots.services.clones.manager import clone_manager
