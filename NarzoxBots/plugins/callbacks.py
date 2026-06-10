@@ -204,7 +204,8 @@ async def _config_callbacks(client: Client, query: types.CallbackQuery):
     try:
         data = query.data
         clone_id = None
-        for cid, cdata in db.json_db.data["clones"].items():
+        clones = await db.get_clones()
+        for cid, cdata in clones.items():
             if cdata.get("bot_username") == client.me.username:
                 clone_id = cid
                 break
@@ -212,8 +213,8 @@ async def _config_callbacks(client: Client, query: types.CallbackQuery):
         if not clone_id:
             return await query.answer("Unauthorized.", show_alert=True)
 
-        settings = db.json_db.data["clone_settings"].get(clone_id)
-        if not settings or query.from_user.id != db.json_db.data["clones"][clone_id].get("owner_id"):
+        settings = await db.get_settings(clone_id)
+        if not settings or query.from_user.id != clones[clone_id].get("owner_id"):
             return await query.answer("Only the bot owner can use this.", show_alert=True)
 
         if data == "edit_welcome_config":
@@ -233,8 +234,8 @@ async def _config_callbacks(client: Client, query: types.CallbackQuery):
             prompt = "Send the new assistant session string."
         elif data.startswith("toggle_flag"):
             flag = data.split()[1]
-            settings[flag] = not settings.get(flag, True if flag != "maintenance_mode" else False)
-            await db.json_db._save()
+            current_val = getattr(settings, flag, True if flag != "maintenance_mode" else False)
+            await db.update_settings(clone_id, **{flag: not current_val})
             await query.answer(f"Toggled {flag.replace('_', ' ')}!")
             # Update the config message
             from NarzoxBots.plugins.owner_settings import bot_config
@@ -249,8 +250,7 @@ async def _config_callbacks(client: Client, query: types.CallbackQuery):
             # Note: listen requires a compatible client implementation or pyromod
             response = await client.listen(chat_id=query.message.chat.id, user_id=query.from_user.id, timeout=60)
             if response and response.text:
-                db.json_db.data["clone_settings"][clone_id][field] = response.text
-                await db.json_db._save()
+                await db.update_settings(clone_id, **{field: response.text})
                 await response.reply_text(f"Successfully updated {field.replace('_', ' ')}!")
                 await msg.delete()
         except asyncio.TimeoutError:

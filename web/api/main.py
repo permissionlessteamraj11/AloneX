@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Body
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from NarzoxBots.database.db import get_db, json_db
-from NarzoxBots.database.models import User, Chat, Clone, AdminAction, Broadcast, GlobalSettings, CloneSettings
+from NarzoxBots.database.db import db as database
+from NarzoxBots.database.models import User, Chat, Clone, GlobalSettings, CloneSettings
 from NarzoxBots.services.clones.manager import clone_manager
 from NarzoxBots import app as main_bot, logger, config
 from jose import JWTError, jwt
@@ -45,10 +45,10 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 @app.get("/stats")
 async def get_stats(admin: str = Depends(get_current_admin)):
-    total_users = len(json_db.data["users"])
-    total_chats = len(json_db.data["chats"])
-    active_clones = len([c for c in json_db.data["clones"].values() if c.get("status") == "active"])
-    premium_users = len([u for u in json_db.data["users"].values() if u.get("is_premium")])
+    total_users = await database.db.users.count_documents({})
+    total_chats = await database.db.chats.count_documents({})
+    active_clones = await database.db.clones.count_documents({"status": "active"})
+    premium_users = await database.db.users.count_documents({"is_premium": True})
 
     return {
         "total_users": total_users,
@@ -61,23 +61,19 @@ async def get_stats(admin: str = Depends(get_current_admin)):
 
 @app.post("/api/premium/grant")
 async def grant_premium(user_id: int = Body(...), days: int = Body(0), admin: str = Depends(get_current_admin)):
-    expiry = (datetime.now(timezone.utc) + timedelta(days=days)).isoformat() if days > 0 else None
-    if str(user_id) in json_db.data["users"]:
-        json_db.data["users"][str(user_id)].update({"is_premium": True, "premium_expiry": expiry})
-        await json_db._save()
+    expiry = (datetime.now(timezone.utc) + timedelta(days=days)) if days > 0 else None
+    await database.update_user(user_id, is_premium=True, premium_expiry=expiry)
     return {"status": "success"}
 
 @app.get("/api/settings")
 async def get_global_settings(admin: str = Depends(get_current_admin)):
-    return json_db.data["global_settings"].get("1", {})
+    settings = await database.get_settings()
+    return settings.to_dict() if settings else {}
 
 @app.post("/api/settings/toggle")
 async def toggle_global_setting(flag: str = Body(...), value: bool = Body(...), admin: str = Depends(get_current_admin)):
-    if "1" in json_db.data["global_settings"]:
-        json_db.data["global_settings"]["1"][flag] = value
-        await json_db._save()
-        return {"status": "success", "flag": flag, "new_value": value}
-    raise HTTPException(status_code=404, detail="Settings not found")
+    await database.update_settings(None, **{flag: value})
+    return {"status": "success", "flag": flag, "new_value": value}
 
 @app.post("/api/broadcast")
 async def global_broadcast(
@@ -85,7 +81,7 @@ async def global_broadcast(
     target: str = Body("all"),
     admin: str = Depends(get_current_admin)
 ):
-    user_ids = [int(uid) for uid in json_db.data["users"].keys()]
+    user_ids = await database.get_all_users()
 
     async def run_broadcast():
         if target in ["all", "main"]:

@@ -8,7 +8,6 @@ from pyrogram import enums, filters, types, Client
 
 from NarzoxBots import app, config, db, lang
 from NarzoxBots.helpers import buttons, utils
-from NarzoxBots.database.db import json_db
 
 @Client.on_message(filters.command(["help"]) & filters.private & ~app.bl_users)
 @lang.language()
@@ -38,7 +37,8 @@ async def start(client: Client, message: types.Message):
     is_clone = client.me.id != app.id
     clone_id = None
     if is_clone:
-        for cid, cdata in db.json_db.data["clones"].items():
+        clones = await db.get_clones()
+        for cid, cdata in clones.items():
             if cdata.get("bot_username") == client.me.username:
                 clone_id = cid
                 break
@@ -67,27 +67,28 @@ async def start(client: Client, message: types.Message):
 
     if is_clone:
         target_clone_id = None
-        for cid, cdata in json_db.data["clones"].items():
+        clones = await db.get_clones()
+        for cid, cdata in clones.items():
             if cdata.get("bot_username") == client.me.username:
                 target_clone_id = cid
                 break
 
         if target_clone_id:
-            settings = json_db.data["clone_settings"].get(target_clone_id)
+            settings = await db.get_settings(target_clone_id)
             if settings:
-                start_img = settings.get("welcome_media") or start_img
-                support_link = settings.get("support_link") or support_link
-                updates_link = settings.get("updates_link") or updates_link
-                group_link = settings.get("group_link")
-                owner_link = settings.get("owner_link") or owner_link
-                clone_link = settings.get("clone_link") or clone_link
+                start_img = settings.welcome_media or start_img
+                support_link = settings.support_link or support_link
+                updates_link = settings.updates_link or updates_link
+                group_link = settings.group_link
+                owner_link = settings.owner_link or owner_link
+                clone_link = settings.clone_link or clone_link
     else:
-        settings = json_db.data["global_settings"].get("1")
+        settings = await db.get_settings()
         if settings:
-            start_img = settings.get("welcome_banner") or start_img
-            support_link = settings.get("support_link") or support_link
-            updates_link = settings.get("updates_link") or updates_link
-            owner_link = settings.get("owner_link") or owner_link
+            start_img = settings.welcome_banner or start_img
+            support_link = settings.support_link or support_link
+            updates_link = settings.updates_link or updates_link
+            owner_link = settings.owner_link or owner_link
 
     if private:
         user_mention = message.from_user.mention
@@ -107,8 +108,8 @@ async def start(client: Client, message: types.Message):
     )
 
     # Check if already welcomed (once per user flow)
-    user_data = json_db.data["users"].get(str(message.from_user.id))
-    if private and user_data and user_data.get("welcomed"):
+    user_data = await db.get_user(message.from_user.id)
+    if private and user_data and user_data.welcomed:
         # Still send the message but maybe keep it logged or track sessions
         pass
 
@@ -128,14 +129,11 @@ async def start(client: Client, message: types.Message):
 
     if private:
         if user_data:
-            if not user_data.get("welcomed"):
-                json_db.data["users"][str(message.from_user.id)]["welcomed"] = True
-                await json_db._save()
+            if not user_data.welcomed:
+                await db.update_user(message.from_user.id, welcomed=True)
             return
         await utils.send_log(message)
-        await db.add_user(message.from_user.id)
-        json_db.data["users"][str(message.from_user.id)]["welcomed"] = True
-        await json_db._save()
+        await db.add_user(message.from_user.id, welcomed=True)
     else:
         if await db.is_chat(message.chat.id):
             return

@@ -8,7 +8,7 @@ from NarzoxBots.database.redis import redis_cache
 
 RATE_LIMIT = 2 # seconds between commands
 
-@Client.on_message(filters.command(None) & filters.group, group=-1)
+@Client.on_message(filters.regex(r"^/") & filters.group, group=-1)
 async def rate_limit_middleware(client: Client, message: Message):
     if not message.from_user: return
 

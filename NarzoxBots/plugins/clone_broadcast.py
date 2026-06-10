@@ -15,12 +15,13 @@ async def clone_broadcast(client: Client, message: types.Message):
 
     # Find clone ID and check ownership
     clone_id = None
-    for cid, cdata in db.json_db.data["clones"].items():
+    clones = await db.get_clones()
+    for cid, cdata in clones.items():
         if cdata.get("bot_username") == client.me.username:
             clone_id = cid
             break
 
-    if not clone_id or db.json_db.data["clones"][clone_id]["owner_id"] != user_id:
+    if not clone_id or clones[clone_id]["owner_id"] != user_id:
         return await message.reply_text("Unauthorized. Only the owner can broadcast.")
 
     if not message.reply_to_message:
@@ -31,7 +32,7 @@ async def clone_broadcast(client: Client, message: types.Message):
     # In a real scenario, clones might track their own users.
     # For now, we broadcast to all users in the DB (simplification).
     # Ideally, we should filter by users who started this specific clone.
-    users = list(db.json_db.data["users"].keys())
+    users = await db.get_all_users()
 
     count = 0
     for uid in users:
