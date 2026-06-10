@@ -23,8 +23,9 @@ class CloneManager:
             bot_token=bot_token,
             plugins=dict(root="NarzoxBots.plugins")
         )
-        # Custom attribute for easier tracking
+        # Custom attributes for easier tracking and compatibility
         client.bot_token = bot_token
+        client.logger = config.LOGGER_ID
 
         try:
             await client.start()
