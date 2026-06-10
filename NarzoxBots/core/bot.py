@@ -50,6 +50,8 @@ class Bot(pyrogram.Client):
                         logger.warning("Please promote the bot as an admin in logger group.")
                 except:
                     pass
+        except pyrogram.errors.PeerIdInvalid:
+            logger.info(f"Bot could not access log group {self.logger}: Peer ID invalid. Please ensure the bot is a member of the log group.")
         except Exception as ex:
             logger.warning(f"Bot has failed to access the log group: {self.logger}\nReason: {ex}")
         logger.info(f"Bot started as @{self.username}")

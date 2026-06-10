@@ -125,7 +125,7 @@ class TgCall:
             try:
                 await assistant.get_chat(chat_id)
             except Exception as e:
-                logger.warning(f"Assistant failed to resolve chat {chat_id} before play: {e}")
+                logger.debug(f"Assistant failed to resolve chat {chat_id} before play: {e}")
 
             await client.play(
                 chat_id=chat_id,

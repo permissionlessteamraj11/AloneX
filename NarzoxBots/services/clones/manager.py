@@ -1,5 +1,5 @@
 import asyncio
-from pyrogram import Client, filters
+from pyrogram import Client, errors, filters
 from NarzoxBots import config, logger
 from NarzoxBots.database.db import json_db
 from NarzoxBots.services.encryption import encryption_service
@@ -39,6 +39,8 @@ class CloneManager:
             if config.LOGGER_ID:
                 try:
                     await client.get_chat(config.LOGGER_ID)
+                except errors.PeerIdInvalid:
+                    logger.info(f"Clone @{client.me.username} could not access log group {config.LOGGER_ID}: Peer ID invalid. Please ensure the clone is a member of the log group.")
                 except Exception as e:
                     logger.warning(f"Clone @{client.me.username} failed to access log group: {e}")
 
@@ -61,6 +63,8 @@ class CloneManager:
                 if config.LOGGER_ID:
                     try:
                         await assistant.get_chat(config.LOGGER_ID)
+                    except errors.PeerIdInvalid:
+                        logger.info(f"Assistant for clone @{client.me.username} could not access log group {config.LOGGER_ID}: Peer ID invalid. Please ensure the assistant is a member of the log group.")
                     except:
                         pass
 

@@ -3,7 +3,7 @@
 # This file is part of NarzoxBotsMusic
 
 
-from pyrogram import Client
+from pyrogram import Client, errors
 
 from NarzoxBots import config, logger
 
@@ -56,11 +56,10 @@ class Userbot(Client):
                     await client.send_message(config.LOGGER_ID, "Assistant Started")
                 except Exception as e:
                     logger.debug(f"Assistant {num} could not send start message to log group: {e}")
+        except errors.PeerIdInvalid:
+            logger.info(f"Assistant {num} could not access log group {config.LOGGER_ID}: Peer ID invalid. Please ensure the assistant is a member of the log group.")
         except Exception as ex:
-            if "PeerIdInvalid" in str(ex):
-                logger.warning(f"Assistant {num} log group ID is invalid or not yet 'seen' by this session.")
-            else:
-                logger.warning(f"Assistant {num} failed to access log group: {ex}")
+            logger.warning(f"Assistant {num} failed to access log group: {ex}")
 
         client.id = ub.me.id
         client.name = ub.me.first_name
