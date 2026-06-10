@@ -47,11 +47,11 @@ def checkUB(play):
                 return await m.reply_text(m.lang["play_admin"])
 
         if chat_id not in db.active_calls:
-            client = await db.get_client(chat_id)
+            client = await db.get_assistant(chat_id, bot_id=bot_client.me.id)
             try:
                 # Resolve peer to avoid PeerIdInvalid
                 try:
-                    await bot_client.get_users(client.me.id)
+                    await bot_client.get_users(client.me.username or client.me.id)
                 except:
                     pass
                 # Optimized: Try to get member status without full peer resolution if possible
