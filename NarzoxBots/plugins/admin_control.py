@@ -30,7 +30,7 @@ async def admin_panel(client: Client, message: types.Message):
                 clone_id = cid
                 break
 
-        if not clone_id or db.json_db.data["clones"][clone_id]["owner_id"] != user_id:
+        if not clone_id or (db.json_db.data["clones"][clone_id]["owner_id"] != user_id and user_id != config.OWNER_ID):
             return # Unauthorized
     else:
         if user_id != config.OWNER_ID:
@@ -56,14 +56,25 @@ async def admin_panel(client: Client, message: types.Message):
 
 @Client.on_callback_query(filters.regex("^toggle_flag"))
 async def toggle_flag_cb(client: Client, query: types.CallbackQuery):
-    _, flag, scope = query.data.split()
+    parts = query.data.split()
     user_id = query.from_user.id
 
-    clone_id = None if scope == "global" else scope
+    if len(parts) == 3:
+        _, flag, scope = parts
+        clone_id = None if scope == "global" else scope
+    else:
+        _, flag = parts
+        clone_id = None
+        if client.me.id != app.id:
+            for cid, cdata in db.json_db.data["clones"].items():
+                if cdata.get("bot_username") == client.me.username:
+                    clone_id = cid
+                    break
 
     # Permission check
     if clone_id:
-        if db.json_db.data["clones"].get(clone_id, {}).get("owner_id") != user_id:
+        clone_data = db.json_db.data["clones"].get(clone_id, {})
+        if clone_data.get("owner_id") != user_id and user_id != config.OWNER_ID:
             return await query.answer("Unauthorized.", show_alert=True)
     else:
         if user_id != config.OWNER_ID:

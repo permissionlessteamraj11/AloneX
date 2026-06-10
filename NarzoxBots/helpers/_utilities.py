@@ -7,7 +7,7 @@ import re
 
 from pyrogram import enums, types
 
-from NarzoxBots import app
+from NarzoxBots import app, config
 
 
 class Utilities:
@@ -93,7 +93,8 @@ class Utilities:
         bot_client = None
     ) -> None:
         client = bot_client or app
-        if not client.logger or m.chat.id == client.logger:
+        logger_id = getattr(client, "logger", config.LOGGER_ID)
+        if not logger_id or m.chat.id == logger_id:
             return
         try:
             _text = m.lang["play_log"].format(
@@ -106,7 +107,7 @@ class Utilities:
                 title,
                 duration,
             )
-            await client.send_message(chat_id=client.logger, text=_text)
+            await client.send_message(chat_id=logger_id, text=_text)
         except Exception as e:
             from NarzoxBots import logger
             logger.error(f"Error in play_log: {e}")
