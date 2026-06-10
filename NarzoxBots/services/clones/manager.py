@@ -28,6 +28,10 @@ class CloneManager:
 
         try:
             await client.start()
+            client.id = client.me.id
+            client.name = client.me.first_name
+            client.username = client.me.username
+            client.mention = client.me.mention
             self.clones[bot_token] = client
 
             # Proactively cache the log group peer
@@ -46,7 +50,18 @@ class CloneManager:
                     session_string=assistant_session
                 )
                 await assistant.start()
+                assistant.id = assistant.me.id
+                assistant.name = assistant.me.first_name
+                assistant.username = assistant.me.username
+                assistant.mention = assistant.me.mention
                 self.assistants[bot_token] = assistant
+
+                # Proactively cache the log group peer for assistant
+                if config.LOGGER_ID:
+                    try:
+                        await assistant.get_chat(config.LOGGER_ID)
+                    except:
+                        pass
 
                 # Register assistant with media system
                 from NarzoxBots import anon
