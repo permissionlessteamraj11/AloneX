@@ -8,7 +8,7 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, 
 from NarzoxBots import app, config, db, logger, boot
 from NarzoxBots.helpers import utils
 
-@Client.on_message(filters.command("admin") & filters.sudo)
+@Client.on_message(filters.command("admin") & app.sudoers)
 async def admin_panel(client: Client, message: Message):
     if client.me.id != app.id: return
 
@@ -44,7 +44,7 @@ async def admin_panel(client: Client, message: Message):
     ]
     await message.reply_text(text, reply_markup=InlineKeyboardMarkup(buttons))
 
-@Client.on_callback_query(filters.regex("^adm_") & filters.sudo)
+@Client.on_callback_query(filters.regex("^adm_") & app.sudoers)
 async def admin_actions(client: Client, cb: CallbackQuery):
     action = cb.data.split("_")[1]
 

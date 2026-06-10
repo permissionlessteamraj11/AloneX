@@ -4,7 +4,7 @@ from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from NarzoxBots import app, config, yt, logger
 
-@Client.on_message(filters.command("checkcookies") & filters.sudo)
+@Client.on_message(filters.command("checkcookies") & app.sudoers)
 async def check_cookies(client: Client, message: Message):
     cookie_dir = "NarzoxBots/cookies"
     if not os.path.exists(cookie_dir):
@@ -24,7 +24,7 @@ async def check_cookies(client: Client, message: Message):
 
     await message.reply_text(report)
 
-@Client.on_message(filters.command("refreshcookies") & filters.sudo)
+@Client.on_message(filters.command("refreshcookies") & app.sudoers)
 async def refresh_cookies(client: Client, message: Message):
     if not config.COOKIES_URL:
         return await message.reply_text("No COOKIES_URL configured in environment variables.")
