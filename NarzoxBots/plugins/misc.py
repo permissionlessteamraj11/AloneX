@@ -14,13 +14,32 @@ from NarzoxBots.helpers import buttons
 
 @Client.on_message(filters.video_chat_started, group=19)
 async def video_chat_started_hndlr(client: Client, m: types.Message):
-    # Silent to avoid double response
-    pass
+    # To prevent multiple bots from responding, only the main bot responds if present,
+    # otherwise one of the clones responds.
+    if client.me.id != app.id:
+        try:
+            await client.get_chat_member(m.chat.id, app.id)
+            return
+        except:
+            pass
+    try:
+        await m.reply_text("<b>◈ ᴠɪᴅᴇᴏ ᴄʜᴀᴛ sᴛᴀʀᴛᴇᴅ ◈</b>")
+    except:
+        pass
 
 @Client.on_message(filters.video_chat_ended, group=20)
 async def video_chat_ended_hndlr(client: Client, m: types.Message):
-    # Silent to avoid double response
+    if client.me.id != app.id:
+        try:
+            await client.get_chat_member(m.chat.id, app.id)
+            return
+        except:
+            pass
     await anon.stop(m.chat.id)
+    try:
+        await m.reply_text("<b>◈ ᴠɪᴅᴇᴏ ᴄʜᴀᴛ ᴇɴᴅᴇᴅ ◈</b>")
+    except:
+        pass
 
 
 async def auto_leave():
@@ -100,28 +119,11 @@ async def update_timer(length=10):
                 pass
 
 
-async def vc_watcher(sleep=15):
+async def vc_watcher(sleep=60):
     while True:
         await asyncio.sleep(sleep)
-        for chat_id in list(db.active_calls):
-            client = await db.get_assistant(chat_id)
-            media = queue.get_current(chat_id)
-            participants = await client.get_participants(chat_id)
-            if len(participants) < 2 and media.time > 30:
-                _lang = await lang.get_lang(chat_id)
-                client = await db.get_client(chat_id)
-                try:
-                    sent = await client.edit_message_reply_markup(
-                        chat_id=chat_id,
-                        message_id=media.message_id,
-                        reply_markup=buttons.controls(
-                            chat_id=chat_id, status=_lang["stopped"], remove=True
-                        ),
-                    )
-                    await anon.stop(chat_id)
-                    await sent.reply_text(_lang["auto_left"])
-                except errors.MessageIdInvalid:
-                    pass
+        # Stability is maintained through StreamEnded and ChatUpdate events in core/calls.py
+        # This watcher can be used for other periodic checks if needed.
 
 
 if config.AUTO_END:

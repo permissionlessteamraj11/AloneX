@@ -113,13 +113,14 @@ class Utilities:
             logger.error(f"Error in play_log: {e}")
 
     async def send_log(self, m: types.Message, chat: bool = False) -> None:
-        if not app.logger:
+        logger_id = getattr(app, "logger", config.LOGGER_ID)
+        if not logger_id:
             return
         try:
             if chat:
                 user = m.from_user
                 return await app.send_message(
-                    chat_id=app.logger,
+                    chat_id=logger_id,
                     text=m.lang["log_chat"].format(
                         m.chat.id,
                         m.chat.title,
@@ -129,7 +130,7 @@ class Utilities:
                 )
 
             await app.send_message(
-                chat_id=app.logger,
+                chat_id=logger_id,
                 text=m.lang["log_user"].format(
                     m.from_user.id,
                     f"@{m.from_user.username}",

@@ -43,7 +43,7 @@ async def admin_panel(client: Client, message: types.Message):
 
     total_users = len(db.json_db.data["users"])
     total_chats = len(db.json_db.data["chats"])
-    active_calls = len(db.db_instance.active_calls)
+    active_calls = len(db.active_calls)
 
     text = (
         "<b>ɴᴀʀᴢᴏx x ᴍᴜsɪᴄ ᴀᴅᴍɪɴ ᴘᴀɴᴇʟ</b>\n\n"
