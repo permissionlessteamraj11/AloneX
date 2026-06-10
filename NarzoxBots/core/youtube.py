@@ -121,9 +121,11 @@ class YouTube:
                     "nocheckcertificate": True,
                     "cookiefile": self.get_cookies(),
                     "skip_download": True,
-                    "extract_flat": True,
+                    "extract_flat": "in_playlist",
                     "cachedir": False,
-                    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+                    "lazy_playlist": True,
+                    "noplaylist": True,
+                    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                 }
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = await asyncio.to_thread(ydl.extract_info, url, download=False)

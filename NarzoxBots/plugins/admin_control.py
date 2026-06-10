@@ -5,12 +5,15 @@ from pyrogram import Client, filters, types
 from NarzoxBots import app, config, db
 from NarzoxBots.helpers._permissions import permission
 
-def get_toggle_markup(flags: dict, clone_id: str = None):
+def get_toggle_markup(flags: dict, clone_id: str = None, user_id: int = None):
     buttons = []
     for flag, value in flags.items():
         status = "✅" if value else "❌"
         callback_data = f"toggle_flag {flag} {clone_id or 'global'}"
         buttons.append([types.InlineKeyboardButton(f"{flag.replace('_', ' ').upper()}: {status}", callback_data=callback_data)])
+
+    if not clone_id and user_id == config.OWNER_ID:
+        buttons.append([types.InlineKeyboardButton("🌐 ᴡᴇʙ ᴅᴀsʜʙᴏᴀʀᴅ", url="https://narzoxbots.vercel.app")]) # Example URL
 
     buttons.append([types.InlineKeyboardButton("ᴄʟᴏsᴇ", callback_data="help close")])
     return types.InlineKeyboardMarkup(buttons)
@@ -43,13 +46,13 @@ async def admin_panel(client: Client, message: types.Message):
     active_calls = len(db.db_instance.active_calls)
 
     text = (
-        "<b>ᴠᴇʀᴛᴇx x ᴍᴜsɪᴄ ᴀᴅᴍɪɴ ᴘᴀɴᴇʟ</b>\n\n"
+        "<b>ɴᴀʀᴢᴏx x ᴍᴜsɪᴄ ᴀᴅᴍɪɴ ᴘᴀɴᴇʟ</b>\n\n"
         f"<b>ᴜsᴇʀs:</b> <code>{total_users}</code>\n"
         f"<b>ᴄʜᴀᴛs:</b> <code>{total_chats}</code>\n"
         f"<b>ᴀᴄᴛɪᴠᴇ sᴛʀᴇᴀᴍs:</b> <code>{active_calls}</code>\n\n"
         "ᴍᴀɴᴀɢᴇ ʏᴏᴜʀ ʙᴏᴛ ғᴇᴀᴛᴜʀᴇs ʀᴇᴀʟ-ᴛɪᴍᴇ."
     )
-    await message.reply_text(text, reply_markup=get_toggle_markup(flags_data, clone_id))
+    await message.reply_text(text, reply_markup=get_toggle_markup(flags_data, clone_id, user_id))
 
 @Client.on_callback_query(filters.regex("^toggle_flag"))
 async def toggle_flag_cb(client: Client, query: types.CallbackQuery):
@@ -75,5 +78,5 @@ async def toggle_flag_cb(client: Client, query: types.CallbackQuery):
     for f in flags_to_show:
         flags_data[f] = await db.get_feature_flag(f, clone_id)
 
-    await query.edit_message_reply_markup(reply_markup=get_toggle_markup(flags_data, clone_id))
+    await query.edit_message_reply_markup(reply_markup=get_toggle_markup(flags_data, clone_id, user_id))
     await query.answer(f"{flag.replace('_', ' ')} toggled to {'ON' if new_val else 'OFF'}")

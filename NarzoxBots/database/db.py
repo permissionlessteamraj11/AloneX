@@ -348,11 +348,21 @@ class Database:
         return bool(config.LOGGER_ID)
 
     async def get_assistant(self, chat_id: int):
+        from NarzoxBots import app
+        from NarzoxBots.services.clones.manager import clone_manager
+
+        # If it's a clone, try to find its custom assistant
+        for bot_token, assistant in clone_manager.assistants.items():
+            client = clone_manager.clones.get(bot_token)
+            if client:
+                try:
+                    # Check if this bot is in the chat
+                    if await client.get_chat(chat_id):
+                        return assistant
+                except:
+                    continue
+
         from NarzoxBots import userbot
-        # logic to determine which assistant to use for this chat
-        # For now, it defaults to the first one, but for clones,
-        # it should ideally use the clone's assistant if available.
-        # This is a bit complex with the current architecture, so we keep it simple.
         return userbot.clients[0]
 
     async def get_client(self, chat_id: int):

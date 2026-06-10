@@ -160,39 +160,43 @@ class Inline:
         support: str,
         updates: str,
         owner: str,
-        clone: str = None
+        clone: str = None,
+        group: str = None
     ) -> types.InlineKeyboardMarkup:
         if not private:
-            return self.ikm(
-                [
-                    [
-                        self.ikb(text=_lang["add_me"], url=f"https://t.me/{bot_username}?startgroup=true"),
-                    ],
-                    [
-                        self.ikb(text=_lang["support"], url=support),
-                        self.ikb(text=_lang["channel"], url=updates),
-                    ]
-                ]
-            )
-
-        return self.ikm(
-            [
+            rows = [
                 [
                     self.ikb(text=_lang["add_me"], url=f"https://t.me/{bot_username}?startgroup=true"),
                 ],
                 [
-                    self.ikb(text=_lang["help"], callback_data="help main"),
-                ],
-                [
                     self.ikb(text=_lang["support"], url=support),
                     self.ikb(text=_lang["channel"], url=updates),
-                ],
-                [
-                    self.ikb(text=_lang["clone_btn"], callback_data="clone_info"),
-                    self.ikb(text=_lang["owner_btn"], url=owner),
                 ]
             ]
-        )
+            if group:
+                rows.append([self.ikb(text="ɢʀᴏᴜᴘ", url=group)])
+            return self.ikm(rows)
+
+        rows = [
+            [
+                self.ikb(text=_lang["add_me"], url=f"https://t.me/{bot_username}?startgroup=true"),
+            ],
+            [
+                self.ikb(text=_lang["help"], callback_data="help main"),
+            ],
+            [
+                self.ikb(text=_lang["support"], url=support),
+                self.ikb(text=_lang["channel"], url=updates),
+            ]
+        ]
+        if group:
+            rows.append([self.ikb(text="ɢʀᴏᴜᴘ", url=group)])
+
+        rows.append([
+            self.ikb(text=_lang["clone_btn"], callback_data="clone_info"),
+            self.ikb(text=_lang["owner_btn"], url=owner),
+        ])
+        return self.ikm(rows)
 
     def yt_key(self, url: str) -> types.InlineKeyboardMarkup:
         return self.ikm(
