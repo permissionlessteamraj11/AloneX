@@ -1,29 +1,26 @@
+# Copyright (c) 2025 NarzoxBots
+# ALONE-CODER
+
+import time
 from pyrogram import Client, filters
 from pyrogram.types import Message
-from NarzoxBots import db, config
-from NarzoxBots.database.db import json_db
-from NarzoxBots.database.models import User
+from NarzoxBots.database.redis import redis_cache
 
-@Client.on_message(group=-1) # Run before other handlers
-async def register_user_middleware(client: Client, message: Message):
-    if not message.from_user:
-        return
+RATE_LIMIT = 2 # seconds between commands
+
+@Client.on_message(filters.regex(r"^/") & filters.group, group=-1)
+async def rate_limit_middleware(client: Client, message: Message):
+    if not message.from_user: return
 
     user_id = message.from_user.id
-    username = message.from_user.username
-    first_name = message.from_user.first_name
+    key = f"rate_limit:{user_id}"
 
-    user_data = json_db.data["users"].get(str(user_id))
+    last_cmd_time = await redis_cache.get(key)
+    now = time.time()
 
-    if not user_data:
-        new_user = User(
-            id=user_id,
-            username=username,
-            first_name=first_name
-        )
-        json_db.data["users"][str(user_id)] = new_user.to_dict()
-        await json_db._save()
-    elif user_data.get("username") != username or user_data.get("first_name") != first_name:
-        json_db.data["users"][str(user_id)]["username"] = username
-        json_db.data["users"][str(user_id)]["first_name"] = first_name
-        await json_db._save()
+    if last_cmd_time and now - float(last_cmd_time) < RATE_LIMIT:
+        message.stop_propagation()
+        # Optionally send a warning message
+        return
+
+    await redis_cache.set(key, now, ex=RATE_LIMIT)

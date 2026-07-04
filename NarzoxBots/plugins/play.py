@@ -48,7 +48,8 @@ async def play_hndlr(
                 pass
         clone_id = None
         if is_clone:
-            for cid, cdata in db.json_db.data["clones"].items():
+            clones = await db.get_clones()
+            for cid, cdata in clones.items():
                 if cdata.get("bot_username") == client.me.username:
                     clone_id = cid
                     break

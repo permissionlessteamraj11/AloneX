@@ -1,15 +1,14 @@
 from pyrogram import filters, Client
 from pyrogram.types import Message
-from NarzoxBots import app, config
-from NarzoxBots.database.db import json_db
+from NarzoxBots import app, config, db
 import datetime
 
 @Client.on_message(filters.command("premium") & filters.private)
 async def premium_status(client: Client, message: Message):
     user_id = message.from_user.id
-    user_data = json_db.data["users"].get(str(user_id))
+    user_data = await db.get_user(user_id)
 
-    if user_data and user_data.get("is_premium"):
+    if user_data and user_data.is_premium:
         expiry = user_data.get("premium_expiry") or "Lifetime"
         await message.reply_text(f"You are a Premium User!\nExpiry: {expiry}")
     else:
@@ -19,7 +18,8 @@ async def premium_status(client: Client, message: Message):
 async def my_bot_status(client: Client, message: Message):
     user_id = message.from_user.id
     target_clone = None
-    for cid, cdata in json_db.data["clones"].items():
+    clones = await db.get_clones()
+    for cid, cdata in clones.items():
         if cdata.get("owner_id") == user_id:
             target_clone = cdata
             break
@@ -31,6 +31,7 @@ async def my_bot_status(client: Client, message: Message):
 
 @Client.on_message(filters.command("status") & filters.user(config.OWNER_ID))
 async def system_status(client: Client, message: Message):
-    u_count = len(json_db.data["users"])
-    c_count = len(json_db.data["clones"])
+    # This might need more efficient way if DB is huge, but for now:
+    u_count = await db.db.users.count_documents({})
+    c_count = await db.db.clones.count_documents({})
     await message.reply_text(f"System Stats:\nTotal Users: {u_count}\nActive Clones: {c_count}")
