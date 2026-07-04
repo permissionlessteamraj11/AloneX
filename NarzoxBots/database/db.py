@@ -16,6 +16,7 @@ class Database:
         self.sudoers = set()
         self.bl_users = set()
         self.admins = {}
+        self.notified = set()
 
     async def connect(self):
         try:
@@ -74,6 +75,49 @@ class Database:
     async def get_lang(self, chat_id: int):
         chat = await self.get_chat(chat_id)
         return chat.lang if chat else "en"
+
+    # Auth Management
+    async def is_auth(self, chat_id: int, user_id: int) -> bool:
+        chat = await self.get_chat(chat_id)
+        return user_id in chat.auth_users if chat else False
+
+    async def add_auth(self, chat_id: int, user_id: int):
+        await self.db.chats.update_one(
+            {"_id": chat_id}, {"$addToSet": {"auth_users": user_id}}, upsert=True
+        )
+
+    async def rm_auth(self, chat_id: int, user_id: int):
+        await self.db.chats.update_one(
+            {"_id": chat_id}, {"$pull": {"auth_users": user_id}}
+        )
+
+    # Admin Management
+    async def get_admins(self, chat_id: int, reload: bool = False) -> list[int]:
+        if not reload and chat_id in self.admins:
+            return self.admins[chat_id]
+
+        from NarzoxBots.helpers._admins import reload_admins
+        admins = await reload_admins(chat_id)
+        if admins:
+            self.admins[chat_id] = admins
+        return admins
+
+    # Warning Management
+    async def add_warn(self, chat_id: int, user_id: int) -> int:
+        key = f"warns:{chat_id}:{user_id}"
+        warns = await redis_cache.get(key)
+        warns = int(warns) + 1 if warns else 1
+        await redis_cache.set(key, warns)
+        return warns
+
+    async def get_warns(self, chat_id: int, user_id: int) -> int:
+        key = f"warns:{chat_id}:{user_id}"
+        warns = await redis_cache.get(key)
+        return int(warns) if warns else 0
+
+    async def reset_warns(self, chat_id: int, user_id: int):
+        key = f"warns:{chat_id}:{user_id}"
+        await redis_cache.delete(key)
 
     # Call Management (In-memory/Redis preferred for real-time)
     async def add_call(self, chat_id: int):
@@ -182,5 +226,19 @@ class Database:
     @property
     def blacklisted(self):
         return self.bl_users
+
+    async def add_blacklist(self, chat_id: int):
+        if chat_id > 0: # User
+            await self.update_user(chat_id, is_suspended=True)
+        else: # Group
+            await self.db.chats.update_one({"_id": chat_id}, {"$set": {"is_blacklisted": True}}, upsert=True)
+        self.bl_users.add(chat_id)
+
+    async def del_blacklist(self, chat_id: int):
+        if chat_id > 0: # User
+            await self.update_user(chat_id, is_suspended=False)
+        else: # Group
+            await self.db.chats.update_one({"_id": chat_id}, {"$set": {"is_blacklisted": False}})
+        self.bl_users.discard(chat_id)
 
 db_instance = Database()

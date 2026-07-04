@@ -54,6 +54,9 @@ class CloneManager:
                 from NarzoxBots import anon
                 await anon.register_assistant(client.me.id, assistant)
 
+            from NarzoxBots.helpers import utils
+            await utils.set_commands(client)
+
             logger.info(f"Started clone: @{client.me.username}")
             return client
         except Exception as e:

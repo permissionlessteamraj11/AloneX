@@ -7,7 +7,7 @@ import re
 
 from pyrogram import enums, types
 
-from NarzoxBots import app, config
+from NarzoxBots import app, config, db
 
 
 class Utilities:
@@ -163,3 +163,35 @@ class Utilities:
         except Exception as e:
             from NarzoxBots import logger
             logger.error(f"Error in send_log: {e}")
+
+    async def set_commands(self, client: "types.Client"):
+        is_clone = client.me.id != app.id
+
+        commands = [
+            types.BotCommand("start", "Start the bot"),
+            types.BotCommand("help", "Get help menu"),
+            types.BotCommand("play", "Play music"),
+            types.BotCommand("vplay", "Play video"),
+            types.BotCommand("pause", "Pause streaming"),
+            types.BotCommand("resume", "Resume streaming"),
+            types.BotCommand("skip", "Skip current track"),
+            types.BotCommand("stop", "Stop streaming"),
+            types.BotCommand("queue", "Check queue"),
+            types.BotCommand("settings", "Bot settings"),
+            types.BotCommand("ping", "Check bot latency"),
+            types.BotCommand("stats", "Bot statistics")
+        ]
+
+        if not is_clone:
+            commands.extend([
+                types.BotCommand("clone", "Clone the bot"),
+                types.BotCommand("stopclone", "Remove cloned bot"),
+                types.BotCommand("sudoers", "Check sudo users")
+            ])
+
+        try:
+            await client.set_bot_commands(commands, scope=types.BotCommandScopeAllPrivateChats())
+            await client.set_bot_commands(commands, scope=types.BotCommandScopeAllGroupChats())
+        except Exception as e:
+            from NarzoxBots import logger
+            logger.error(f"Error setting commands for @{client.me.username}: {e}")
