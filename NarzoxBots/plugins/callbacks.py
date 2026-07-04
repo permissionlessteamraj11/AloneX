@@ -101,7 +101,7 @@ async def _controls(client: Client, query: types.CallbackQuery):
             reply = query.lang["play_stopped"].format(user)
 
         if action in ["skip", "replay", "stop"]:
-            await query.message.reply_text(reply, quote=False)
+            await query.message.reply_text(reply)
             await query.message.delete()
         else:
             mtext = re.sub(

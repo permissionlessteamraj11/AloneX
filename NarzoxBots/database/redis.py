@@ -7,11 +7,17 @@ logger = logging.getLogger("NarzoxBots.Redis")
 
 class RedisCache:
     def __init__(self):
+        self.redis = None
+        self._enabled = False
         try:
             self.redis = redis.from_url(config.REDIS_URL, decode_responses=True)
             self._enabled = True
         except Exception as e:
-            logger.error(f"Failed to connect to Redis: {e}")
+            logger.warning(f"Redis not available at startup: {e}")
+
+    def _handle_error(self, e):
+        if self._enabled:
+            logger.error(f"Redis error encountered: {e}. Disabling Redis cache.")
             self._enabled = False
 
     async def set(self, key, value, ex=None):
@@ -19,14 +25,14 @@ class RedisCache:
         try:
             await self.redis.set(key, value, ex=ex)
         except Exception as e:
-            logger.error(f"Redis set error: {e}")
+            self._handle_error(e)
 
     async def get(self, key):
         if not self._enabled: return None
         try:
             return await self.redis.get(key)
         except Exception as e:
-            logger.error(f"Redis get error: {e}")
+            self._handle_error(e)
             return None
 
     async def delete(self, key):
@@ -34,25 +40,25 @@ class RedisCache:
         try:
             await self.redis.delete(key)
         except Exception as e:
-            logger.error(f"Redis delete error: {e}")
+            self._handle_error(e)
 
     async def sadd(self, key, *values):
         if not self._enabled: return
         try:
             await self.redis.sadd(key, *values)
         except Exception as e:
-            logger.error(f"Redis sadd error: {e}")
+            self._handle_error(e)
 
     async def smembers(self, key):
         if not self._enabled: return []
         try:
             return await self.redis.smembers(key)
         except Exception as e:
-            logger.error(f"Redis smembers error: {e}")
+            self._handle_error(e)
             return []
 
     async def close(self):
-        if not self._enabled: return
+        if not self._enabled or not self.redis: return
         try:
             await self.redis.close()
         except Exception as e:
