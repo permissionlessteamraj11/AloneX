@@ -2,14 +2,8 @@
 # ALONE-CODER
 
 import asyncio
- fix-peer-id-invalid-errors-7838642790269921988
 from pyrogram import Client, errors, filters
-from NarzoxBots import config, logger
-from NarzoxBots.database.db import json_db
-
-from pyrogram import Client, filters
 from NarzoxBots import config, logger, db
- ALONE
 from NarzoxBots.services.encryption import encryption_service
 
 class CloneManager:
@@ -29,7 +23,6 @@ class CloneManager:
             await client.start()
             self.clones[bot_token] = client
 
- fix-peer-id-invalid-errors-7838642790269921988
             # Proactively cache the log group peer
             if config.LOGGER_ID:
                 try:
@@ -39,8 +32,6 @@ class CloneManager:
                 except Exception as e:
                     logger.warning(f"Clone @{client.me.username} failed to access log group: {e}")
 
-
- ALONE
             if assistant_session:
                 assistant = Client(
                     name=f"as_{bot_token.split(':')[0]}",
@@ -49,7 +40,6 @@ class CloneManager:
                 )
                 await assistant.start()
                 self.assistants[bot_token] = assistant
- fix-peer-id-invalid-errors-7838642790269921988
 
                 # Proactively cache the log group peer for assistant
                 if config.LOGGER_ID:
@@ -61,8 +51,6 @@ class CloneManager:
                         pass
 
                 # Register assistant with media system
-
- ALONE
                 from NarzoxBots import anon
                 await anon.register_assistant(client.me.id, assistant)
 
