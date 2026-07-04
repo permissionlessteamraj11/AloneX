@@ -15,7 +15,6 @@ async def _help(client: Client, m: types.Message):
     await m.reply_text(
         text=m.lang["help_menu"],
         reply_markup=buttons.help_markup(m.lang),
-        quote=True,
     )
 
 
@@ -118,13 +117,11 @@ async def start(client: Client, message: types.Message):
             photo=start_img,
             caption=_text,
             reply_markup=key,
-            quote=not private,
         )
     else:
         await message.reply_text(
             text=_text,
             reply_markup=key,
-            quote=not private,
         )
 
     if private:
@@ -151,8 +148,7 @@ async def settings(client: Client, message: types.Message):
         text=message.lang["start_settings"].format(message.chat.title),
         reply_markup=buttons.settings_markup(
             message.lang, admin_only, cmd_delete, _language, message.chat.id
-        ),
-        quote=True,
+        )
     )
 
 
