@@ -58,7 +58,7 @@ def checkUB(play):
                     await client.get_users(bot_client.me.id)
                     await client.get_chat(chat_id)
                 except Exception as e:
-                    logger.warning(f"Peer resolution warning in chat {chat_id}: {e}")
+                    logger.debug(f"Peer resolution warning in chat {chat_id}: {e}")
 
                 # Optimized: Try to get member status without full peer resolution if possible
                 member = await bot_client.get_chat_member(chat_id, client.me.id)
@@ -79,7 +79,7 @@ def checkUB(play):
                                 f"@{client.me.username}" if client.me.username else None,
                             )
                         )
-            except (errors.UserNotParticipant, errors.exceptions.bad_request_400.UserNotParticipant):
+            except (errors.UserNotParticipant, errors.exceptions.bad_request_400.UserNotParticipant, errors.PeerIdInvalid):
                 if m.chat.username:
                     invite_link = m.chat.username
                     try:

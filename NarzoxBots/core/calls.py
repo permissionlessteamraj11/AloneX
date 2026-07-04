@@ -111,8 +111,16 @@ class TgCall:
             ffmpeg_parameters=(f"-ss {seek_time} " if seek_time > 1 else "") + f"{filter_str} -tune zerolatency -analyzeduration 0 -probesize 32",
         )
         try:
+ fix-peer-id-invalid-errors-7838642790269921988
+            # Pre-play peer resolution for assistant
+            try:
+                await assistant.get_chat(chat_id)
+            except Exception as e:
+                logger.debug(f"Assistant failed to resolve chat {chat_id} before play: {e}")
+
             try: await assistant.get_chat(chat_id)
             except: pass
+ ALONE
 
             await client.play(chat_id=chat_id, stream=stream)
             if not seek_time:
