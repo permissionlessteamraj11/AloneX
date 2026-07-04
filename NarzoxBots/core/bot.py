@@ -37,6 +37,9 @@ class Bot(pyrogram.Client):
         self.username = self.me.username
         self.mention = self.me.mention
 
+        from NarzoxBots.helpers import utils
+        await utils.set_commands(self)
+
         if self.logger:
             try:
                 await self.get_chat(self.logger)

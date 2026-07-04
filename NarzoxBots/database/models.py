@@ -41,13 +41,15 @@ class User:
 class Chat:
     def __init__(self, id: int, title: str = None, lang: str = "en",
                  admin_only: bool = False, cmd_delete: bool = False,
-                 is_blacklisted: bool = False, settings: Optional[Dict[str, Any]] = None):
+                 is_blacklisted: bool = False, auth_users: Optional[List[int]] = None,
+                 settings: Optional[Dict[str, Any]] = None):
         self.id = id
         self.title = title
         self.lang = lang
         self.admin_only = admin_only
         self.cmd_delete = cmd_delete
         self.is_blacklisted = is_blacklisted
+        self.auth_users = auth_users or []
         self.settings = settings or {
             "welcome_enabled": True,
             "anti_spam": False,
