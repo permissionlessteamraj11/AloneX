@@ -24,6 +24,9 @@ class TgCall:
             self.clients[0] if self.clients else None
         )
 
+    async def ping(self) -> float:
+        return 0.0
+
     async def register_assistant(self, bot_id: int, assistant: Client):
         if assistant.me.id in self._assistant_map:
             self._bot_to_assistant[bot_id] = assistant.me.id

@@ -43,6 +43,7 @@ async def play_hndlr(
         if is_clone and "@" not in m.text.split()[0]:
             try:
                 await client.get_chat_member(m.chat.id, app.id)
+                logger.info(f"Clone @{client.me.username} staying silent in chat {m.chat.id} as main bot is present.")
                 return # Main bot is present, clone stays silent
             except:
                 pass
@@ -55,7 +56,7 @@ async def play_hndlr(
                     break
 
         if not await db.get_feature_flag("music_enabled", clone_id):
-            return # Silently ignore or send maintenance message
+            return await m.reply_text("ᴍᴜsɪᴄ ᴘʟᴀʏʙᴀᴄᴋ ɪs ᴄᴜʀʀᴇɴᴛʟʏ ᴅɪsᴀʙʟᴇᴅ ʙʏ ᴛʜᴇ ᴀᴅᴍɪɴ.")
 
         sent = await m.reply_text(m.lang["play_searching"])
         file = None

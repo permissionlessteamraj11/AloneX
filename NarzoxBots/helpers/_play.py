@@ -47,10 +47,12 @@ def checkUB(play):
                 return await m.reply_text(m.lang["play_admin"])
 
         if chat_id not in db.active_calls:
+            logger.info(f"Initiating assistant check for chat {chat_id}")
             client = await db.get_assistant(chat_id, bot_id=bot_client.me.id)
             try:
                 # Robust Peer Resolution for both bot and assistant
                 try:
+                    logger.debug(f"Resolving peers for chat {chat_id}")
                     # Bot client 'meets' assistant and resolves chat
                     await bot_client.get_users(client.me.id)
                     await bot_client.get_chat(chat_id)
@@ -61,6 +63,7 @@ def checkUB(play):
                     logger.debug(f"Peer resolution warning in chat {chat_id}: {e}")
 
                 # Optimized: Try to get member status without full peer resolution if possible
+                logger.debug(f"Checking assistant membership for chat {chat_id}")
                 member = await bot_client.get_chat_member(chat_id, client.me.id)
                 if member.status in [
                     enums.ChatMemberStatus.BANNED,
@@ -104,11 +107,13 @@ def checkUB(play):
                             m.lang["play_invite_error"].format(type(ex).__name__)
                         )
 
+                logger.info(f"Assistant {client.me.id} not in chat {chat_id}, inviting...")
                 umm = await m.reply_text(m.lang["play_invite"].format(bot_client.me.first_name))
                 await asyncio.sleep(2)
                 try:
                     await asyncio.wait_for(client.join_chat(invite_link), timeout=20)
                 except asyncio.TimeoutError:
+                    logger.error(f"Assistant join timeout in chat {chat_id}")
                     return await umm.edit_text("Assistant took too long to join. Please try again.")
                 except errors.UserAlreadyParticipant:
                     pass
